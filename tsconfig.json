@@ -5,6 +5,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "allowJs": false,
+    "declaration": true,
     "noImplicitAny": false,
     "moduleResolution": "node",
     "types": [
@@ -21,6 +22,7 @@
   ],
   "exclude": [
     "node_modules",
+    "dist",
     "lib/**/*.test.ts"
   ]
 }
