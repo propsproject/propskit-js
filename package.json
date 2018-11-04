@@ -1,0 +1,84 @@
+{
+  "name": "@younow/lib-pending-props",
+  "version": "0.0.2",
+  "description": "Communicate with the pending props sidechain",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit --require babel-polyfill",
+    "build": "npm run transpile",
+    "transpile": "tsc && npm run copyfiles",
+    "copyfiles": "copyfiles lib/**/*.lua lib/**/*.js dist -u 1",
+    "prepublish": "npm run build",
+    "check-coverage": "nyc check-coverage --statement 100 --branches 100 --functions 100 --lines 100",
+    "commit": "git-cz",
+    "tdd": "multi='mocha-osx-reporter=- spec=-' npm test -- --reporter mocha-multi -w",
+    "cover": "nyc npm test",
+    "doc": "apidoc -i lib/ -o public/doc/",
+    "wip": "mocha --compilers js:babel-register -w --",
+    "watch:test": "npm test -- -w"
+  },
+  "dependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/node": "^10.12.2",
+    "apidoc": "^0.16.1",
+    "bignumber.js": "^7.2.1",
+    "cbor": "^4.1.1",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "chai-string": "^1.4.0",
+    "copy-files": "^0.1.0",
+    "ethereum-address": "^0.0.4",
+    "ethereumjs-util": "^6.0.0",
+    "google-closure-library": "^20180910.0.0",
+    "google-protobuf": "^3.6.1",
+    "lodash": "^4.17.4",
+    "md5": "^2.2.1",
+    "moment": "^2.22.1",
+    "moment-timezone": "^0.5.17",
+    "newrelic": "2.5.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2",
+    "sawtooth-sdk": "^1.0.5",
+    "sha256": "^0.2.0",
+    "ts-node": "^6.0.5",
+    "typescript": "^2.8.3",
+    "uuid": "^3.1.0",
+    "web3": "^0.20.6",
+    "wtfnode": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.109",
+    "@types/mocha": "^5.2.0",
+    "@types/moment-timezone": "^0.5.5",
+    "commitizen": "^2.8.6",
+    "copyfiles": "^2.0.0",
+    "cz-conventional-changelog": "^1.2.0",
+    "mocha": "^5.2.0",
+    "mocha-multi": "^1.0.1",
+    "mocha-osx-reporter": "^0.1.2",
+    "nodejs-dashboard": "latest",
+    "nyc": "^10.0.0",
+    "sinon": "^7.1.0",
+    "tslint": "^4.5.1",
+    "tslint-config-airbnb": "^1.1.1"
+  },
+  "czConfig": {
+    "path": "node_modules/cz-conventional-changelog"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "all": true
+  },
+  "author": "Jonathan Achai",
+  "license": "ISC"
+}
