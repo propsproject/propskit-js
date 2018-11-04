@@ -317,4 +317,4 @@ class TransactionManager {
   
 }
 
-export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction };
+export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, LogFunction };

@@ -1,7 +1,7 @@
 const _ = require('lodash');
 import { TransactionManager } from '../transaction_manager';
 const chai = require('chai');
-const sinon = require('sinon');
+// const sinon = require('sinon');
 const chaiAsPromised = require('chai-as-promised');
 import 'mocha';
 import IssuePayload from '../payloads/issue_payload';
