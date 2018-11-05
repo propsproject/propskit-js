@@ -1,6 +1,6 @@
 {
   "name": "@younow/lib-pending-props",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Communicate with the pending props sidechain",
   "main": "dist/index.ts",
   "scripts": {
