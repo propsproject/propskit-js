@@ -222,7 +222,7 @@ class TransactionManager {
 
   private getIssueEarningDetailsPB(payload: IssuePayload, timestamp: number = 0) {
     const details = new earnings_pb.EarningDetails();
-    details.setTimestamp(timestamp > 0 ? timestamp : this.request_timestamp);
+    details.setTimestamp(payload.timestamp > 0 ? payload.timestamp : (timestamp > 0 ? timestamp : this.request_timestamp));
     details.setRecipientPublicAddress(payload.wallet);
     details.setAmountEarned(payload.amount);
     details.setAmountSettled(0.0);

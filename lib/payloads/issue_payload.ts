@@ -1,6 +1,7 @@
 interface IssuePayload {
   wallet: string;
-  amount: number;  
+  amount: number;
+  timestamp?: number;
 }
 
 export default IssuePayload;
