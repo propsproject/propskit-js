@@ -1,10 +1,10 @@
 {
   "name": "@younow/lib-pending-props",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Communicate with the pending props sidechain",
   "main": "dist/index.ts",
   "scripts": {
-    "test": "NODE_ENV=test mocha $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit --require babel-polyfill",
+    "test": "NODE_ENV=test mocha $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit",
     "build": "npm run transpile",
     "transpile": "tsc && npm run copyfiles",
     "copyfiles": "copyfiles lib/**/*.lua lib/**/*.js dist -u 1",

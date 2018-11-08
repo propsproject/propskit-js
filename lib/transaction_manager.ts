@@ -222,7 +222,7 @@ class TransactionManager {
 
   private getIssueEarningDetailsPB(payload: IssuePayload, timestamp: number = 0) {
     const details = new earnings_pb.EarningDetails();
-    details.setTimestamp(payload.timestamp > 0 ? payload.timestamp : (timestamp > 0 ? timestamp : this.request_timestamp));
+    details.setTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.request_timestamp));
     details.setRecipientPublicAddress(payload.wallet);
     details.setAmountEarned(payload.amount);
     details.setAmountSettled(0.0);
@@ -231,7 +231,7 @@ class TransactionManager {
   }
 
   public getIssueStateAddress(payload: IssuePayload, timestamp: number): string {
-    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(payload, timestamp);
+    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(payload, 'timestamp' in payload ? payload.timestamp : timestamp);
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     const earningsSignature = this.signer.sign(Buffer.from(hashToSign));
     return this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
