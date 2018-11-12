@@ -44,12 +44,14 @@ class TransactionManager {
   last_state_data: string[];
   last_submit_response: SubmitAPIResponse;
   last_status_response: StatusAPIResponse[];
+  revoked_addresses: any;
   
   app_addr: string;
   request_timestamp: number;
 
   log; // log function
   options: TransactionManagerOptions;
+  prefixes: any; // prefixes for earning addresses
  
   constructor(appPrivateKey: string, options: TransactionManagerOptions, logFunction: LogFunction = null) {    
     this.ctx = createContext('secp256k1');
@@ -61,6 +63,12 @@ class TransactionManager {
       console.log(`${msg}|${topic}|${owner}|${appLevel}|${primaryId}|${secondaryId}|${JSON.stringify(extraObj)}|${JSON.stringify(err)}|${url}`); 
     } : logFunction;
     this.options = options;
+    this.prefixes = {
+      pending: createHash('sha512').update('pending-props:earnings:pending').digest('hex').substring(0, 6),
+      revoked: createHash('sha512').update('pending-props:earnings:revoked').digest('hex').substring(0, 6),
+      settled: createHash('sha512').update('pending-props:earnings:settled').digest('hex').substring(0, 6),
+      settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
+    };
   }
 
   public async submitRevokeTransaction(stateAddresses:string[]):Promise<boolean> {
@@ -203,12 +211,20 @@ class TransactionManager {
     
   }
 
-  private getStateAddress(recipient, application, signature): string {
-    const prefix: string = createHash('sha512').update(this.options.earning_prefix).digest('hex').substring(0, 6);
-    const recID: string = createHash('sha512').update(recipient).digest('hex').substring(0, 4);
-    const appID: string = createHash('sha512').update(application).digest('hex').substring(0, 4);
-    const postfix: string = createHash('sha512').update(`${recipient}${application}${signature}`).digest('hex').toLowerCase().substring(0, 56);
-    return `${prefix}${recID}${appID}${postfix}`;
+  // private getStateAddress(recipient, application, signature): string {
+  //   const prefix: string = createHash('sha512').update(this.options.earning_prefix).digest('hex').substring(0, 6);
+  //   const recID: string = createHash('sha512').update(recipient).digest('hex').substring(0, 4);
+  //   const appID: string = createHash('sha512').update(application).digest('hex').substring(0, 4);
+  //   const postfix: string = createHash('sha512').update(`${recipient}${application}${signature}`).digest('hex').toLowerCase().substring(0, 56);
+  //   return `${prefix}${recID}${appID}${postfix}`;
+  // }
+  private getStateAddress(status: string, args: any): string {
+    const prefix: string = this.prefixes[status];
+    let address: string = prefix;
+    args.forEach((a) => {
+      address = address.concat(createHash('sha512').update(`${a.data}`).digest('hex').substring(a.start, a.end));
+    });
+    return address;
   }
 
   private getRPCRequest(params, method) {
@@ -220,10 +236,14 @@ class TransactionManager {
     return payload;
   }
 
+  private stripWalletPrefix(str: string): string {
+    return str.substr(0,2) === '0x' ? str.substr(2) : str; 
+  }
+
   private getIssueEarningDetailsPB(payload: IssuePayload, timestamp: number = 0) {
     const details = new earnings_pb.EarningDetails();
     details.setTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.request_timestamp));
-    details.setRecipientPublicAddress(payload.wallet);
+    details.setRecipientPublicAddress(this.stripWalletPrefix(payload.wallet));
     details.setAmountEarned(payload.amount);
     details.setAmountSettled(0.0);
     details.setApplicationPublicAddress(this.app_addr);    
@@ -234,7 +254,12 @@ class TransactionManager {
     const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(payload, 'timestamp' in payload ? payload.timestamp : timestamp);
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     const earningsSignature = this.signer.sign(Buffer.from(hashToSign));
-    return this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
+    const addressArgs = [
+      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
+      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
+      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
+    ];
+    return this.getStateAddress('pending', addressArgs);    
   }
 
   private getIssueTransaction(issueEarningsDetailsPB: any) {
@@ -249,7 +274,13 @@ class TransactionManager {
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.Earning');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.ISSUE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
-    const stateAddress = this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
+    const addressArgs = [
+      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
+      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
+      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
+    ];
+    // const stateAddress = this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
+    const stateAddress = this.getStateAddress('pending', addressArgs);    
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
         familyVersion: this.options.family_version,
@@ -277,16 +308,23 @@ class TransactionManager {
     // earning.setDetails(issueEarningsDetailsPB);
     // earning.setSignature(earningsSignature);    
     // const msg = createHash("sha512").update("fsafdas").digest('hex');
-    const paramData = JSON.stringify({ addresses: [stateAddress] });
+    const stateAddresses: string[] = [stateAddress];
+    const paramData = JSON.stringify({ addresses: stateAddresses });
     const params = new any.Any();
     params.setValue(Buffer.from(paramData));    
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.REVOKE);
-    const rpcRequestBytes = rpcRequest.serializeBinary();    
+    const rpcRequestBytes = rpcRequest.serializeBinary();
+    const revokeAddresses: string[] = [];
+    stateAddresses.forEach((address) => {
+      const revokeAddress:string = `${this.prefixes.revoked}${address.substring(6)}`;
+      revokeAddresses.push(revokeAddress);
+      this.revoked_addresses[revokeAddress];
+    });
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
         familyVersion: this.options.family_version,
-        inputs: [stateAddress],
-        outputs: [stateAddress],
+        inputs: [...stateAddresses, ...revokeAddresses],
+        outputs: [...stateAddresses, ...revokeAddresses],
         signerPublicKey: this.getPublicKey(),
         batcherPublicKey: this.getPublicKey(),
         dependencies: [],
