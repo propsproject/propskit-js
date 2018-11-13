@@ -69,6 +69,7 @@ class TransactionManager {
       settled: createHash('sha512').update('pending-props:earnings:settled').digest('hex').substring(0, 6),
       settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
     };
+    this.revoked_addresses = {};
   }
 
   public async submitRevokeTransaction(stateAddresses:string[]):Promise<boolean> {
@@ -257,8 +258,9 @@ class TransactionManager {
     const addressArgs = [
       { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
       { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
-      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
+      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
     ];
+    // console.log(JSON.stringify(addressArgs));
     return this.getStateAddress('pending', addressArgs);    
   }
 
@@ -277,8 +279,9 @@ class TransactionManager {
     const addressArgs = [
       { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
       { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
-      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
+      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
     ];
+    // console.log("*************************"+JSON.stringify(addressArgs));
     // const stateAddress = this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
     const stateAddress = this.getStateAddress('pending', addressArgs);    
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
@@ -318,7 +321,7 @@ class TransactionManager {
     stateAddresses.forEach((address) => {
       const revokeAddress:string = `${this.prefixes.revoked}${address.substring(6)}`;
       revokeAddresses.push(revokeAddress);
-      this.revoked_addresses[revokeAddress];
+      this.revoked_addresses[address] = revokeAddress;
     });
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
