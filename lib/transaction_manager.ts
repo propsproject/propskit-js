@@ -7,8 +7,8 @@ const rp = require('request-promise');
 const { protobuf } = require('sawtooth-sdk');
 // const proto = require('google-protobuf');
 const any = require('google-protobuf/google/protobuf/any_pb.js');
-const payloads_pb = require('./proto/payload_pb.js');
-const earnings_pb = require('./proto/earning_pb.js');
+const payloads_pb = require('./proto/payload/payload_pb');
+const earnings_pb = require('./proto/earning/earning_pb');
 const ethUtil = require('ethereumjs-util');
 // const BigNumber = require('bignumber.js');
 const { createHash } = require('crypto');
@@ -229,7 +229,7 @@ class TransactionManager {
   }
 
   private getRPCRequest(params, method) {
-    const reqParams = new payloads_pb.Params();
+    const reqParams = new payloads_pb.Params();    
     reqParams.setData(params);
     const payload = new payloads_pb.RPCRequest();
     payload.setMethod(method);
