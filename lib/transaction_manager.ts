@@ -15,6 +15,7 @@ const { createHash } = require('crypto');
 import { Signer } from 'crypto';
 import TransactionManagerOptions from './transaction_manager_options';
 import IssuePayload from './payloads/issue_payload';
+import SettlePayload from './payloads/settle_payload';
 
 interface SubmitAPIResponse {
   batch_status_uri: string;   
@@ -262,6 +263,19 @@ class TransactionManager {
     ];
     // console.log(JSON.stringify(addressArgs));
     return this.getStateAddress('pending', addressArgs);    
+  }
+
+  public getSettleStateAddress(payload: SettlePayload, timestamp: number): string {
+    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(payload, 'timestamp' in payload ? payload.timestamp : timestamp);
+    const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
+    const earningsSignature = this.signer.sign(Buffer.from(hashToSign));
+    const addressArgs = [
+      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
+      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
+      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
+    ];
+    // console.log(JSON.stringify(addressArgs));
+    return this.getStateAddress('settled', addressArgs);
   }
 
   private getIssueTransaction(issueEarningsDetailsPB: any) {
