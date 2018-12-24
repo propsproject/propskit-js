@@ -2,8 +2,8 @@
 // file: events.proto
 
 import * as jspb from "google-protobuf";
-import * as earning_pb from "../earning/earning_pb";
-import * as balance_pb from "../balance/balance_pb";
+import * as earning_pb from "./earning_pb";
+import * as balance_pb from "./balance_pb";
 
 export class EarningEvent extends jspb.Message {
   hasEarning(): boolean;
