@@ -69,15 +69,17 @@ class TransactionManager {
       revoked: createHash('sha512').update('pending-props:earnings:revoked').digest('hex').substring(0, 6),
       settled: createHash('sha512').update('pending-props:earnings:settled').digest('hex').substring(0, 6),
       settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
+      balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),
+      balanceTimestamp: createHash('sha512').update('pending-props:earnings:bal-ts').digest('hex').substring(0, 6),
     };
     this.revoked_addresses = {};
   }
 
-  public async submitRevokeTransaction(stateAddresses:string[]):Promise<boolean> {
+  public async submitRevokeTransaction(stateAddresses:string[], recipient: string):Promise<boolean> {
     
     const transactions = [];
     for (let i = 0; i < stateAddresses.length; i += 1) {  
-      transactions.push(this.getRevokeTransaction(stateAddresses[i]));
+      transactions.push(this.getRevokeTransaction(stateAddresses[i],recipient));
     }
     const batch = this.getBatch(transactions);    
     return this.makeSubmitAPIRequest(batch);
@@ -220,13 +222,27 @@ class TransactionManager {
   //   const postfix: string = createHash('sha512').update(`${recipient}${application}${signature}`).digest('hex').toLowerCase().substring(0, 56);
   //   return `${prefix}${recID}${appID}${postfix}`;
   // }
-  private getStateAddress(status: string, args: any): string {
+  public getEarningStateAddress(status: string, args: any): string {
     const prefix: string = this.prefixes[status];
     let address: string = prefix;
     args.forEach((a) => {
       address = address.concat(createHash('sha512').update(`${a.data}`).digest('hex').substring(a.start, a.end));
     });
     return address;
+  }
+
+  public getBalanceStateAddress(recipientAddress: string): string {
+    const prefix: string = this.prefixes['balance'];
+    const recipient = this.stripWalletPrefix(recipientAddress);
+    const postfix: string = createHash('sha512').update(`${recipient}`).digest('hex').toLowerCase().substring(0,64);
+    return `${prefix}${postfix}`;
+  }
+
+  public getBalanceTimestateAddressPrefix(recipientAddress: string): string {
+    const prefix: string = this.prefixes['balanceTimestamp'];
+    const recipient = this.stripWalletPrefix(recipientAddress);
+    const postfix: string = createHash('sha512').update(`${recipient}`).digest('hex').toLowerCase().substring(0,54);
+    return `${prefix}${postfix}`;
   }
 
   private getRPCRequest(params, method) {
@@ -262,7 +278,7 @@ class TransactionManager {
       { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
     ];
     // console.log(JSON.stringify(addressArgs));
-    return this.getStateAddress('pending', addressArgs);    
+    return this.getEarningStateAddress('pending', addressArgs);    
   }
 
   public getSettleStateAddress(payload: SettlePayload, timestamp: number): string {
@@ -275,7 +291,7 @@ class TransactionManager {
       { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${this.app_addr}${earningsSignature}`, start: 0, end: 56 },
     ];
     // console.log(JSON.stringify(addressArgs));
-    return this.getStateAddress('settled', addressArgs);
+    return this.getEarningStateAddress('settled', addressArgs);
   }
 
   private getIssueTransaction(issueEarningsDetailsPB: any) {
@@ -297,12 +313,14 @@ class TransactionManager {
     ];
     // console.log("*************************"+JSON.stringify(addressArgs));
     // const stateAddress = this.getStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress(), issueEarningsDetailsPB.getApplicationPublicAddress(), earningsSignature);    
-    const stateAddress = this.getStateAddress('pending', addressArgs);    
+    const stateAddress = this.getEarningStateAddress('pending', addressArgs);
+    const balanceAddress = this.getBalanceStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress());
+    const balanceTimestampAddress = this.getBalanceTimestateAddressPrefix(issueEarningsDetailsPB.getRecipientPublicAddress());
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
         familyVersion: this.options.family_version,
-        inputs: [stateAddress],
-        outputs: [stateAddress],
+        inputs: [balanceAddress, stateAddress],
+        outputs: [balanceAddress, balanceTimestampAddress, stateAddress],
         signerPublicKey: this.getPublicKey(),
         batcherPublicKey: this.getPublicKey(),
         dependencies: [],
@@ -317,7 +335,7 @@ class TransactionManager {
     return tx;
   }
 
-  private getRevokeTransaction(stateAddress: string) {
+  private getRevokeTransaction(stateAddress: string, recipient: string) {
     // prepare transaction
     // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     // const earningsSignature = this.signer.sign(Buffer.from(hashToSign));
@@ -337,11 +355,13 @@ class TransactionManager {
       revokeAddresses.push(revokeAddress);
       this.revoked_addresses[address] = revokeAddress;
     });
+    const balanceAddress = this.getBalanceStateAddress(recipient);
+    const balanceTimestampAddress = this.getBalanceTimestateAddressPrefix(recipient);
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
         familyVersion: this.options.family_version,
-        inputs: [...stateAddresses, ...revokeAddresses],
-        outputs: [...stateAddresses, ...revokeAddresses],
+        inputs: [balanceAddress, ...stateAddresses, ...revokeAddresses],
+        outputs: [balanceAddress, balanceTimestampAddress, ...stateAddresses, ...revokeAddresses],
         signerPublicKey: this.getPublicKey(),
         batcherPublicKey: this.getPublicKey(),
         dependencies: [],

@@ -43,6 +43,24 @@ describe('Transaction Manager tests', async () => {
     expect(address).to.be.equal(expectedAddress);    
   });
 
+  it('Succesfully calculate a balance address', async() => {
+    const pk: string = privateKey;    
+    const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';    
+    const expectedAddress: string = 'ec00a6588e1de8a519664a3218c1e7c0ea8607f85861aaa49b80affa8e93552c5c2a91';    
+    const tm: TransactionManager = new TransactionManager(pk, tmOptions);    
+    const address: string = tm.getBalanceStateAddress(wallet);
+    expect(address).to.be.equal(expectedAddress);    
+  });
+
+  it('Succesfully calculate a balance timestamp address prefix', async() => {
+    const pk: string = privateKey;    
+    const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';    
+    const expectedAddress: string = '32f2ac588e1de8a519664a3218c1e7c0ea8607f85861aaa49b80affa8e93';    
+    const tm: TransactionManager = new TransactionManager(pk, tmOptions);    
+    const address: string = tm.getBalanceTimestateAddressPrefix(wallet);
+    expect(address).to.be.equal(expectedAddress);    
+  });
+
   after(async () => {
     
   });
