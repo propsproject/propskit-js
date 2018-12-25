@@ -33,10 +33,10 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a pending state address', async() => {
     const pk: string = privateKey;
-    const ts: number = 1542040768;
+    const ts: number = 1545751245610;
     const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';
-    const amount: number = 100;
-    const expectedAddress: string = 'a7db46588e3bbde6adb7030fb4530bb40e78d2b1a26cfb6039924cde94fec6ab96eb72';    
+    const amount: number = 200;
+    const expectedAddress: string = 'a7db46588e3bbd1ab91e8b271c565d6749903508f298354b1551ae2171b6491267c33a';    
     const tm: TransactionManager = new TransactionManager(pk, tmOptions);
     const issuePayload: IssuePayload = { wallet, amount };
     const address: string = tm.getIssueStateAddress(issuePayload, ts);

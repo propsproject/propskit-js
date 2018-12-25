@@ -8,6 +8,7 @@ const { protobuf } = require('sawtooth-sdk');
 // const proto = require('google-protobuf');
 const any = require('google-protobuf/google/protobuf/any_pb.js');
 const payloads_pb = require('./proto/payload_pb');
+const balance_pb = require('./proto/balance_pb');
 const earnings_pb = require('./proto/earning_pb');
 const ethUtil = require('ethereumjs-util');
 // const BigNumber = require('bignumber.js');
@@ -16,6 +17,7 @@ import { Signer } from 'crypto';
 import TransactionManagerOptions from './transaction_manager_options';
 import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
+import { Balance } from './proto/balance_pb';
 
 interface SubmitAPIResponse {
   batch_status_uri: string;   
@@ -34,6 +36,13 @@ interface BatchDetailsTransaction {
 
 interface LogFunction {
   (msg: string, topic: string, owner: string, appLevel: number, primaryId: number, secondaryId: number, extraObj: any, err: Error, url: string): any;
+}
+
+interface WalletBalance {
+  pending: number;
+  total: number;
+  timestamp: number;
+  wallet: string;
 }
 
 class TransactionManager {  
@@ -75,11 +84,46 @@ class TransactionManager {
     this.revoked_addresses = {};
   }
 
+  public async getBalanceByWallet(wallet: string): Promise<WalletBalance> {
+    const balanceAddress: string = this.getBalanceStateAddress(wallet);
+    const options = {
+      method: 'GET',
+      uri: this.options.stateUrl(balanceAddress),      
+      headers: { 'Content-Type': 'application/json' },
+    };    
+    try {
+      const res = JSON.parse(await rp(options));    
+      const data = res.data;
+      let walletBalance: WalletBalance;
+      data.forEach((entry) => {
+        const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
+        const balance: Balance = new balance_pb
+          .Balance
+          .deserializeBinary(bytes);
+        walletBalance = {
+          pending: balance.getPending(),
+          total: balance.getTotal(),
+          timestamp: balance.getLastTimestamp(),
+          wallet,
+        };
+        
+      });
+      return walletBalance;
+    } catch (error) {
+      this.log(`error=${error.message}`, 'TRANSACTION_MANAGER_API_ERROR', 'jon', 0, 0, 0, options, error);
+      this.last_error = error;
+      return null;
+    }    
+
+  }
+
   public async submitRevokeTransaction(stateAddresses:string[], recipient: string):Promise<boolean> {
     
     const transactions = [];
+    const balanceAddress: string = this.getBalanceStateAddress(recipient);
+    const balanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipient);
     for (let i = 0; i < stateAddresses.length; i += 1) {  
-      transactions.push(this.getRevokeTransaction(stateAddresses[i],recipient));
+      transactions.push(this.getRevokeTransaction(stateAddresses[i],[balanceAddress, balanceTimestampAddressPrefix]));
     }
     const batch = this.getBatch(transactions);    
     return this.makeSubmitAPIRequest(batch);
@@ -115,7 +159,10 @@ class TransactionManager {
     }
     const transactionsData: BatchDetailsTransaction[] = [];
     for (let i = 0; i < resObj.data.transactions.length; i += 1) {  
-      transactionsData[resObj.data.transactions[i].header.inputs[0]] = { trasnaction_id: resObj.data.transactions[i].header_signature, state_address: resObj.data.transactions[i].header.inputs[0] };
+      for (let j = 0; j < resObj.data.transactions[i].header.inputs.length; j += 1) {
+        transactionsData[resObj.data.transactions[i].header.inputs[j]] = { trasnaction_id: resObj.data.transactions[i].header_signature, state_address: resObj.data.transactions[i].header.inputs[j] };
+      }
+      
     }
     return transactionsData;
   }
@@ -335,7 +382,7 @@ class TransactionManager {
     return tx;
   }
 
-  private getRevokeTransaction(stateAddress: string, recipient: string) {
+  private getRevokeTransaction(stateAddress: string, authAddresses: string[]) {
     // prepare transaction
     // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     // const earningsSignature = this.signer.sign(Buffer.from(hashToSign));
@@ -355,13 +402,12 @@ class TransactionManager {
       revokeAddresses.push(revokeAddress);
       this.revoked_addresses[address] = revokeAddress;
     });
-    const balanceAddress = this.getBalanceStateAddress(recipient);
-    const balanceTimestampAddress = this.getBalanceTimestateAddressPrefix(recipient);
+    
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.options.family_name,
         familyVersion: this.options.family_version,
-        inputs: [balanceAddress, ...stateAddresses, ...revokeAddresses],
-        outputs: [balanceAddress, balanceTimestampAddress, ...stateAddresses, ...revokeAddresses],
+        inputs: [...authAddresses, ...stateAddresses, ...revokeAddresses],
+        outputs: [...authAddresses, ...stateAddresses, ...revokeAddresses],
         signerPublicKey: this.getPublicKey(),
         batcherPublicKey: this.getPublicKey(),
         dependencies: [],
@@ -392,4 +438,4 @@ class TransactionManager {
   
 }
 
-export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, LogFunction };
+export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, LogFunction, WalletBalance };
