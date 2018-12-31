@@ -13,6 +13,7 @@ const earnings_pb = require('./proto/earning_pb');
 const ethUtil = require('ethereumjs-util');
 // const BigNumber = require('bignumber.js');
 const { createHash } = require('crypto');
+const moment = require('moment');
 import { Signer } from 'crypto';
 import TransactionManagerOptions from './transaction_manager_options';
 import IssuePayload from './payloads/issue_payload';
@@ -391,7 +392,7 @@ class TransactionManager {
     // earning.setSignature(earningsSignature);    
     // const msg = createHash("sha512").update("fsafdas").digest('hex');
     const stateAddresses: string[] = [stateAddress];
-    const paramData = JSON.stringify({ addresses: stateAddresses });
+    const paramData = JSON.stringify({ timestamp: moment().unix(), addresses: stateAddresses });
     const params = new any.Any();
     params.setValue(Buffer.from(paramData));    
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.REVOKE);
