@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const { createContext, CryptoFactory } = require('sawtooth-sdk/signing');
+const { Secp256k1PrivateKey } = require('sawtooth-sdk/signing/secp256k1');
 const rp = require('request-promise');
 const { protobuf } = require('sawtooth-sdk');
 const any = require('google-protobuf/google/protobuf/any_pb.js');
@@ -108,7 +109,7 @@ class TransactionManager {
   static getSigner(privateKey) {
     const ctx = createContext('secp256k1');
     const cryptoFactory = new CryptoFactory(ctx);
-    return cryptoFactory.newSigner(privateKey);
+    return cryptoFactory.newSigner(Secp256k1PrivateKey.fromHex(privateKey));
   }
 
   static getAppAddress(privateKey) {
