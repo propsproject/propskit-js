@@ -10,10 +10,12 @@ const earnings_pb = require('./proto/earning_pb');
 const ethUtil = require('ethereumjs-util');
 const { createHash } = require('crypto');
 const moment = require('moment');
+const BigNumber = require('bignumber.js');
 
 import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
 import { Balance } from './proto/balance_pb';
+import { LastEthBlock } from './proto/earning_pb';
 
 interface SubmitAPIResponse {
   batchStatusUri: string;
@@ -35,6 +37,16 @@ interface WalletBalance {
   total: number;
   timestamp: number;
   wallet: string;
+}
+
+interface BalanceUpdate {
+  recipient: string;
+  recipientBalance: string;
+  from: string;
+  fromBalance: string;
+  txHash: string;
+  blockId: number;
+  timestamp: number;  
 }
 
 interface TransactionManagerOptions {
@@ -86,6 +98,8 @@ class TransactionManager {
       settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
       balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),
       balanceTimestamp: createHash('sha512').update('pending-props:earnings:bal-ts').digest('hex').substring(0, 6),
+      balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-trx').digest('hex').substring(0, 6),
+      blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
     };
   }
 
@@ -115,6 +129,32 @@ class TransactionManager {
   static getAppAddress(privateKey) {
     const signer = TransactionManager.getSigner(privateKey);
     return ethUtil.pubToAddress(signer.getPublicKey().asBytes(), true).toString('hex');
+  }
+
+  async getLatestEthBlockId(): Promise<number> {
+    const lastEthBlockIdAddress: string = this.getLastEthBlockStateAddress();
+    const options = {
+      method: 'GET',
+      uri: this.stateAddressUrl(lastEthBlockIdAddress),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    try {
+      const res = JSON.parse(await rp(options));    
+      const data = res.data;
+      let blockId = null;
+
+      data.forEach((entry) => {
+        const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
+        // const balance: Balance = new balance_pb.Balance.deserializeBinary(bytes);
+        const block: LastEthBlock = new earnings_pb.LastEthBlock.deserializeBinary(bytes);
+        blockId = block.getId();        
+      });
+
+      return blockId;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getBalanceByWallet(wallet: string): Promise<WalletBalance> {
@@ -161,6 +201,28 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
+  public async submitBalanceUpdateTransaction(privateKey, recipient: string, recipientBalance: string, from: string, fromBalance:string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
+    const transactions = [];
+    const recipientBalanceAddress: string = this.getBalanceStateAddress(recipient);
+    const recipientBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipient);
+    const fromBalanceAddress: string = this.getBalanceStateAddress(from);
+    const fromBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(from);
+    const balanceUpdateAddress: string = this.getBalanceUpdateAddress(txHash);
+    const balanceUpdateData: BalanceUpdate = {
+      recipient,
+      recipientBalance,
+      from,
+      fromBalance,
+      txHash,
+      blockId,
+      timestamp,
+    };
+    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[recipientBalanceAddress, recipientBalanceTimestampAddressPrefix, fromBalanceAddress, fromBalanceTimestampAddressPrefix, balanceUpdateAddress]));    
+
+    const batch = this.getBatch(privateKey, transactions);
+    return this.makeSubmitAPIRequest(batch);
+  }
+
   public async submitIssueTransaction(privateKey, issuePayloads:IssuePayload[], timestamp: number):Promise<boolean> {
     this.requestTimestamp = timestamp;
     const transactions = [];
@@ -173,12 +235,19 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
+  public async submitNewEthBlockIdTransaction(privateKey, blockId: number): Promise<boolean> {
+    const transactions = [];
+    transactions.push(this.getLastEthBlockTransaction(privateKey, blockId));
+    const batch = this.getBatch(privateKey, transactions);
+    return this.makeSubmitAPIRequest(batch);
+  }
+
   public async statusLookup(batchUri: string): Promise<boolean> {
     return this.makeStatusAPIRequest(batchUri);
   }
 
-  public async addressLookup(address: string): Promise<any> {
-    const res: boolean = await this.makeAddressAPIRequest(address);
+  public async addressLookup(address: string, type: string = 'EARNING'): Promise<any> {
+    const res: boolean = await this.makeAddressAPIRequest(address, type);
 
     if (res) {
       return this.lastStateData;
@@ -214,7 +283,7 @@ class TransactionManager {
     }    
   }
   
-  private async makeAddressAPIRequest(stateAddress: string): Promise<boolean> {
+  private async makeAddressAPIRequest(stateAddress: string, type: string): Promise<boolean> {
     const options = {
       method: 'GET',
       uri: this.stateAddressUrl(stateAddress),
@@ -225,11 +294,23 @@ class TransactionManager {
       const res = JSON.parse(resStr);
       const data = res.data;
       let ret;
-
+      let dataObject;
       data.forEach((element) => {
         const bytes = new Uint8Array(Buffer.from(element.data, 'base64'));
-        const earning = new earnings_pb.Earning.deserializeBinary(bytes);
-        ret = (earning.toObject()).details;
+        switch (type) {
+          case 'EARNING':
+            dataObject = new earnings_pb.Earning.deserializeBinary(bytes);
+            ret = (dataObject.toObject()).details;
+            break;
+          case 'LASTETHBLOCK':
+            dataObject = new earnings_pb.LastEthBlock.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;
+          case 'BALANCE':
+            dataObject = new balance_pb.Balance.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;  
+        }         
       });
 
       this.lastStateData = ret;
@@ -304,10 +385,24 @@ class TransactionManager {
     return address;
   }
 
-  getBalanceStateAddress(recipientAddress: string): string {
+  public getBalanceStateAddress(recipientAddress: string): string {
     const prefix: string = this.prefixes['balance'];
     const recipient = TransactionManager.normalizeWalletAddress(recipientAddress);
     const postfix: string = createHash('sha512').update(`${recipient}`).digest('hex').toLowerCase().substring(0,64);
+
+    return `${prefix}${postfix}`;
+  }
+
+  public getBalanceUpdateAddress(txHash: string): string {
+    const prefix: string = this.prefixes['balanceUpdate'];    
+    const postfix: string = createHash('sha512').update(`${txHash}`).digest('hex').toLowerCase().substring(0,64);
+
+    return `${prefix}${postfix}`;
+  }
+
+  public getLastEthBlockStateAddress(): string {
+    const prefix: string = this.prefixes['blockIdUpdate'];    
+    const postfix: string = createHash('sha512').update('0').digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
   }
@@ -335,8 +430,12 @@ class TransactionManager {
     const details = new earnings_pb.EarningDetails();
     details.setTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.requestTimestamp));
     details.setRecipientPublicAddress(TransactionManager.normalizeWalletAddress(payload.wallet));
-    details.setAmountEarned(payload.amount);
-    details.setAmountSettled(0.0);
+    BigNumber.set({EXPONENTIAL_AT: 1e+9});
+    const propsAmount = new BigNumber(payload.amount, 10);
+    const tokensAmount = propsAmount.times(1e18);
+    const zero = new BigNumber(0, 10);
+    details.setAmountEarned(tokensAmount.toString());
+    details.setAmountSettled(zero.toString());
     details.setApplicationPublicAddress(TransactionManager.getAppAddress(privateKey));
 
     return details;
@@ -370,6 +469,37 @@ class TransactionManager {
     return this.getEarningStateAddress('settled', addressArgs);
   }
 
+  private getLastEthBlockTransaction(privateKey, blockId: number) {
+    // prepare transaction
+    // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
+    // const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
+    const lastEthBlock = new earnings_pb.LastEthBlock();
+    lastEthBlock.setId(blockId);    
+    const params = new any.Any();
+    params.setValue(lastEthBlock.serializeBinary());
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.LastEthBlock');
+    const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.LAST_ETH_BLOCK_UPDATE);
+    const rpcRequestBytes = rpcRequest.serializeBinary();
+    const stateAddress = this.getLastEthBlockStateAddress();    
+    const transactionHeaderBytes = protobuf.TransactionHeader.encode({
+        familyName: this.familyName,
+        familyVersion: this.familyVersion,
+        inputs: [stateAddress],
+        outputs: [stateAddress],
+        signerPublicKey: TransactionManager.getPublicKey(privateKey),
+        batcherPublicKey: TransactionManager.getPublicKey(privateKey),
+        dependencies: [],
+        payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
+    }).finish();
+
+    const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
+    const tx =  protobuf.Transaction.create({
+      header: transactionHeaderBytes,
+      headerSignature: signature,
+      payload: rpcRequestBytes,
+    });    
+    return tx;
+  }
   private getIssueTransaction(privateKey, issueEarningsDetailsPB: any) {
     // prepare transaction
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
@@ -396,6 +526,44 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: [balanceAddress, stateAddress],
         outputs: [balanceAddress, balanceTimestampAddress, stateAddress],
+        signerPublicKey: TransactionManager.getPublicKey(privateKey),
+        batcherPublicKey: TransactionManager.getPublicKey(privateKey),
+        dependencies: [],
+        payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
+    }).finish();
+
+    const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
+    const tx =  protobuf.Transaction.create({
+      header: transactionHeaderBytes,
+      headerSignature: signature,
+      payload: rpcRequestBytes,
+    });    
+    return tx;
+  }
+  
+  
+  private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {    
+    const balanceUpdate = new earnings_pb.BalanceUpdate();
+    balanceUpdate.setRecipientPublicAddress(TransactionManager.normalizeWalletAddress(balanceUpdateData.recipient));
+    balanceUpdate.setRecipientOnchainBalance(balanceUpdateData.recipientBalance);
+    balanceUpdate.setFromPublicAddress(TransactionManager.normalizeWalletAddress(balanceUpdateData.from));
+    balanceUpdate.setFromOnchainBalance(balanceUpdateData.fromBalance);
+    balanceUpdate.setTxHash(balanceUpdateData.txHash);
+    balanceUpdate.setBlockId(balanceUpdateData.blockId);
+    balanceUpdate.setTimestamp(balanceUpdateData.timestamp);
+
+        
+    const params = new any.Any();
+    params.setValue(balanceUpdate.serializeBinary());    
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.BalanceUpdate');
+    const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.BALANCE_UPDATE);
+    const rpcRequestBytes = rpcRequest.serializeBinary();
+    
+    const transactionHeaderBytes = protobuf.TransactionHeader.encode({
+        familyName: this.familyName,
+        familyVersion: this.familyVersion,
+        inputs: [...authAddresses],
+        outputs: [...authAddresses],
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],

@@ -36,10 +36,10 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a pending state address', async() => {
     const pk: string = privateKey;
-    const ts: number = 1545751245610;
-    const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';
-    const amount: number = 200;
-    const expectedAddress: string = 'a7db46588e3bbd1ab91e8b271c565d6749903508f298354b1551ae2171b6491267c33a';    
+    const ts: number = 1550436297786;
+    const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
+    const amount: number = 10.5;
+    const expectedAddress: string = 'a7db46c0133bbde2705b4b456a73b535e719f8987af413f2c8909a937d6edff3474822';    
     const tm: TransactionManager = new TransactionManager(options);
     const issuePayload: IssuePayload = { wallet, amount };
     const address: string = tm.getIssueStateAddress(pk, issuePayload, ts);
@@ -48,8 +48,8 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a balance address', async() => {
     const pk: string = privateKey;    
-    const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';    
-    const expectedAddress: string = 'ec00a6588e1de8a519664a3218c1e7c0ea8607f85861aaa49b80affa8e93552c5c2a91';    
+    const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';    
+    const expectedAddress: string = 'ec00a6c01354ba07b9cdd87833969dab8a53d59b73e6b8afdec047a432716ffd9f9652';    
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceStateAddress(wallet);
     expect(address).to.be.equal(expectedAddress);    
@@ -57,8 +57,8 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a balance timestamp address prefix', async() => {
     const pk: string = privateKey;    
-    const wallet: string = '0x42EB768f2244C8811C63729A21A3569731535f06';    
-    const expectedAddress: string = '32f2ac588e1de8a519664a3218c1e7c0ea8607f85861aaa49b80affa8e93';    
+    const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';    
+    const expectedAddress: string = '32f2acc01354ba07b9cdd87833969dab8a53d59b73e6b8afdec047a43271';    
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceTimestateAddressPrefix(wallet);
     expect(address).to.be.equal(expectedAddress);    

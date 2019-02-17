@@ -69,10 +69,35 @@ export namespace BalanceEvent {
   }
 }
 
+export class LastEthBlockEvent extends jspb.Message {
+  getBlockid(): number;
+  setBlockid(value: number): void;
+
+  getMessage(): string;
+  setMessage(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LastEthBlockEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: LastEthBlockEvent): LastEthBlockEvent.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LastEthBlockEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LastEthBlockEvent;
+  static deserializeBinaryFromReader(message: LastEthBlockEvent, reader: jspb.BinaryReader): LastEthBlockEvent;
+}
+
+export namespace LastEthBlockEvent {
+  export type AsObject = {
+    blockid: number,
+    message: string,
+  }
+}
+
 export enum EventType {
   EARNINGISSUED = 0,
   EARNINGREVOKED = 1,
   EARNINGSETTLED = 2,
   BALANCEUPDATED = 3,
+  LASTETHBLOCKUPDATED = 4,
 }
 

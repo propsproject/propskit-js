@@ -56,5 +56,7 @@ export enum Method {
   ISSUE = 0,
   REVOKE = 1,
   SETTLE = 2,
+  BALANCE_UPDATE = 3,
+  LAST_ETH_BLOCK_UPDATE = 4,
 }
 

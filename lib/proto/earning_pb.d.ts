@@ -37,11 +37,11 @@ export class EarningDetails extends jspb.Message {
   getTimestamp(): number;
   setTimestamp(value: number): void;
 
-  getAmountEarned(): number;
-  setAmountEarned(value: number): void;
+  getAmountEarned(): string;
+  setAmountEarned(value: string): void;
 
-  getAmountSettled(): number;
-  setAmountSettled(value: number): void;
+  getAmountSettled(): string;
+  setAmountSettled(value: string): void;
 
   getRecipientPublicAddress(): string;
   setRecipientPublicAddress(value: string): void;
@@ -65,8 +65,8 @@ export class EarningDetails extends jspb.Message {
 export namespace EarningDetails {
   export type AsObject = {
     timestamp: number,
-    amountEarned: number,
-    amountSettled: number,
+    amountEarned: string,
+    amountSettled: string,
     recipientPublicAddress: string,
     applicationPublicAddress: string,
     status: Status,
@@ -92,6 +92,70 @@ export class Settlements extends jspb.Message {
 export namespace Settlements {
   export type AsObject = {
     earningAddressesList: Array<string>,
+  }
+}
+
+export class BalanceUpdate extends jspb.Message {
+  getRecipientPublicAddress(): string;
+  setRecipientPublicAddress(value: string): void;
+
+  getRecipientOnchainBalance(): string;
+  setRecipientOnchainBalance(value: string): void;
+
+  getFromPublicAddress(): string;
+  setFromPublicAddress(value: string): void;
+
+  getFromOnchainBalance(): string;
+  setFromOnchainBalance(value: string): void;
+
+  getTxHash(): string;
+  setTxHash(value: string): void;
+
+  getBlockId(): number;
+  setBlockId(value: number): void;
+
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BalanceUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: BalanceUpdate): BalanceUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BalanceUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BalanceUpdate;
+  static deserializeBinaryFromReader(message: BalanceUpdate, reader: jspb.BinaryReader): BalanceUpdate;
+}
+
+export namespace BalanceUpdate {
+  export type AsObject = {
+    recipientPublicAddress: string,
+    recipientOnchainBalance: string,
+    fromPublicAddress: string,
+    fromOnchainBalance: string,
+    txHash: string,
+    blockId: number,
+    timestamp: number,
+  }
+}
+
+export class LastEthBlock extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LastEthBlock.AsObject;
+  static toObject(includeInstance: boolean, msg: LastEthBlock): LastEthBlock.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LastEthBlock, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LastEthBlock;
+  static deserializeBinaryFromReader(message: LastEthBlock, reader: jspb.BinaryReader): LastEthBlock;
+}
+
+export namespace LastEthBlock {
+  export type AsObject = {
+    id: number,
   }
 }
 

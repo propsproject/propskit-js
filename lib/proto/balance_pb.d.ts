@@ -7,14 +7,17 @@ export class Balance extends jspb.Message {
   getRecipientPublicAddress(): string;
   setRecipientPublicAddress(value: string): void;
 
-  getPending(): number;
-  setPending(value: number): void;
+  getPending(): string;
+  setPending(value: string): void;
 
-  getTotal(): number;
-  setTotal(value: number): void;
+  getTotal(): string;
+  setTotal(value: string): void;
 
   getLastTimestamp(): number;
   setLastTimestamp(value: number): void;
+
+  getLastEthBlockId(): number;
+  setLastEthBlockId(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Balance.AsObject;
@@ -29,9 +32,10 @@ export class Balance extends jspb.Message {
 export namespace Balance {
   export type AsObject = {
     recipientPublicAddress: string,
-    pending: number,
-    total: number,
+    pending: string,
+    total: string,
     lastTimestamp: number,
+    lastEthBlockId: number,
   }
 }
 
@@ -47,8 +51,8 @@ export class BalanceTimestamp extends jspb.Message {
   getUpdatetype(): UpdateType;
   setUpdatetype(value: UpdateType): void;
 
-  getBlockId(): string;
-  setBlockId(value: string): void;
+  getBlockId(): number;
+  setBlockId(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BalanceTimestamp.AsObject;
@@ -65,7 +69,7 @@ export namespace BalanceTimestamp {
     timestamp: number,
     balance?: Balance.AsObject,
     updatetype: UpdateType,
-    blockId: string,
+    blockId: number,
   }
 }
 
