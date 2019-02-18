@@ -33,8 +33,8 @@ interface BatchDetailsTransaction {
 }
 
 interface WalletBalance {
-  pending: number;
-  total: number;
+  pending: string; // bigNumber
+  total: string; // bigNumber
   timestamp: number;
   wallet: string;
 }
@@ -430,7 +430,7 @@ class TransactionManager {
     const details = new earnings_pb.EarningDetails();
     details.setTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.requestTimestamp));
     details.setRecipientPublicAddress(TransactionManager.normalizeWalletAddress(payload.wallet));
-    BigNumber.set({EXPONENTIAL_AT: 1e+9});
+    BigNumber.set({ EXPONENTIAL_AT: 1e+9 });
     const propsAmount = new BigNumber(payload.amount, 10);
     const tokensAmount = propsAmount.times(1e18);
     const zero = new BigNumber(0, 10);
