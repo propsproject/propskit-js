@@ -36,10 +36,10 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a pending state address', async() => {
     const pk: string = privateKey;
-    const ts: number = 1550436297786;
+    const ts: number = 1550746180;
     const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
     const amount: number = 10.5;
-    const expectedAddress: string = 'a7db46c0133bbde2705b4b456a73b535e719f8987af413f2c8909a937d6edff3474822';    
+    const expectedAddress: string = 'a7db4665b3286cee1b944599fcef151d8b24b9ce358e8071490a5a50e84204b6a9e8b1';    
     const tm: TransactionManager = new TransactionManager(options);
     const issuePayload: IssuePayload = { wallet, amount };
     const address: string = tm.getIssueStateAddress(pk, issuePayload, ts);
@@ -49,7 +49,7 @@ describe('Transaction Manager tests', async () => {
   it('Succesfully calculate a balance address', async() => {
     const pk: string = privateKey;    
     const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';    
-    const expectedAddress: string = 'ec00a6c01354ba07b9cdd87833969dab8a53d59b73e6b8afdec047a432716ffd9f9652';    
+    const expectedAddress: string = 'ec00a665b35652172c4baa3ed2a3984954320d7ba00fabc381c4970354511307e5888e';    
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceStateAddress(wallet);
     expect(address).to.be.equal(expectedAddress);    
@@ -58,7 +58,7 @@ describe('Transaction Manager tests', async () => {
   it('Succesfully calculate a balance timestamp address prefix', async() => {
     const pk: string = privateKey;    
     const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';    
-    const expectedAddress: string = '32f2acc01354ba07b9cdd87833969dab8a53d59b73e6b8afdec047a43271';    
+    const expectedAddress: string = '32f2ac65b35652172c4baa3ed2a3984954320d7ba00fabc381c497035451';    
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceTimestateAddressPrefix(wallet);
     expect(address).to.be.equal(expectedAddress);    

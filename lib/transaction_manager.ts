@@ -115,10 +115,28 @@ class TransactionManager {
     return this.httpPrefix() + this.host + ':' + this.port + '/state?address=' + stateAddress;
   }
 
-  static normalizeWalletAddress(walletAddress: string): string {
-    const strippedWalletAddress = walletAddress.substr(0,2) === '0x' ? walletAddress.substr(2) : walletAddress;
-    return _.toUpper(strippedWalletAddress);
+  static normalizeAddress(str: string): string {
+    if (str.length > 0) {
+      if (str.substr(0,2) === '0x') {
+        return str.toLowerCase();
+      } else {
+        return `0x${str.toLowerCase()}`
+      }
+    }
+    return str;
   }
+
+  static normalizeTimestamp(timestamp: number) {
+    if (timestamp.toString().length > 10) {// its in miliseconds
+      return Math.floor(timestamp / 1000);
+    }
+    return timestamp;
+  }
+  
+  // static normalizeWalletAddress(walletAddress: string): string {
+  //   const strippedWalletAddress = walletAddress.substr(0,2) === '0x' ? walletAddress.substr(2) : walletAddress;
+  //   return _.toUpper(strippedWalletAddress);
+  // }
 
   static getSigner(privateKey) {
     const ctx = createContext('secp256k1');
@@ -128,7 +146,7 @@ class TransactionManager {
 
   static getAppAddress(privateKey) {
     const signer = TransactionManager.getSigner(privateKey);
-    return ethUtil.pubToAddress(signer.getPublicKey().asBytes(), true).toString('hex');
+    return TransactionManager.normalizeAddress(ethUtil.pubToAddress(signer.getPublicKey().asBytes(), true).toString('hex'));
   }
 
   async getLatestEthBlockId(): Promise<number> {
@@ -158,7 +176,8 @@ class TransactionManager {
   }
 
   async getBalanceByWallet(wallet: string): Promise<WalletBalance> {
-    const balanceAddress: string = this.getBalanceStateAddress(wallet);
+    const walletAddress = TransactionManager.normalizeAddress(wallet);
+    const balanceAddress: string = this.getBalanceStateAddress(walletAddress);
     const options = {
       method: 'GET',
       uri: this.stateAddressUrl(balanceAddress),
@@ -177,8 +196,8 @@ class TransactionManager {
         walletBalance = {
           pending: balance.getPending(),
           total: balance.getTotal(),
-          timestamp: balance.getLastTimestamp(),
-          wallet,
+          timestamp: TransactionManager.normalizeTimestamp(balance.getLastTimestamp()),
+          walletAddress,
         };
       });
 
@@ -189,9 +208,10 @@ class TransactionManager {
   }
 
   public async submitRevokeTransaction(privateKey, stateAddresses:string[], recipient: string):Promise<boolean> {
+    const recipientAddress = TransactionManager.normalizeAddress(recipient);
     const transactions = [];
-    const balanceAddress: string = this.getBalanceStateAddress(recipient);
-    const balanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipient);
+    const balanceAddress: string = this.getBalanceStateAddress(recipientAddress);
+    const balanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipientAddress);
 
     for (let i = 0; i < stateAddresses.length; i += 1) {
       transactions.push(this.getRevokeTransaction(privateKey, stateAddresses[i],[balanceAddress, balanceTimestampAddressPrefix]));
@@ -202,20 +222,23 @@ class TransactionManager {
   }
 
   public async submitBalanceUpdateTransaction(privateKey, recipient: string, recipientBalance: string, from: string, fromBalance:string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
+    const recipientAddress = TransactionManager.normalizeAddress(recipient);
+    const fromAddress = TransactionManager.normalizeAddress(from);
+    const normalizedTxHash = TransactionManager.normalizeAddress(txHash);
     const transactions = [];
-    const recipientBalanceAddress: string = this.getBalanceStateAddress(recipient);
-    const recipientBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipient);
-    const fromBalanceAddress: string = this.getBalanceStateAddress(from);
-    const fromBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(from);
-    const balanceUpdateAddress: string = this.getBalanceUpdateAddress(txHash);
+    const recipientBalanceAddress: string = this.getBalanceStateAddress(recipientAddress);
+    const recipientBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipientAddress);
+    const fromBalanceAddress: string = this.getBalanceStateAddress(fromAddress);
+    const fromBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(fromAddress);
+    const balanceUpdateAddress: string = this.getBalanceUpdateAddress(normalizedTxHash);
     const balanceUpdateData: BalanceUpdate = {
-      recipient,
+      recipient: recipientAddress,
       recipientBalance,
-      from,
+      from: fromAddress,
       fromBalance,
-      txHash,
+      txHash: normalizedTxHash,
       blockId,
-      timestamp,
+      timestamp: TransactionManager.normalizeTimestamp(timestamp),
     };
     transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[recipientBalanceAddress, recipientBalanceTimestampAddressPrefix, fromBalanceAddress, fromBalanceTimestampAddressPrefix, balanceUpdateAddress]));    
 
@@ -224,7 +247,7 @@ class TransactionManager {
   }
 
   public async submitIssueTransaction(privateKey, issuePayloads:IssuePayload[], timestamp: number):Promise<boolean> {
-    this.requestTimestamp = timestamp;
+    this.requestTimestamp = TransactionManager.normalizeTimestamp(timestamp);
     const transactions = [];
 
     for (let i = 0; i < issuePayloads.length; i += 1) {  
@@ -387,29 +410,30 @@ class TransactionManager {
 
   public getBalanceStateAddress(recipientAddress: string): string {
     const prefix: string = this.prefixes['balance'];
-    const recipient = TransactionManager.normalizeWalletAddress(recipientAddress);
+    const recipient = TransactionManager.normalizeAddress(recipientAddress);
     const postfix: string = createHash('sha512').update(`${recipient}`).digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
   }
 
   public getBalanceUpdateAddress(txHash: string): string {
+    const normalizedTxHash: string = TransactionManager.normalizeAddress(txHash);
     const prefix: string = this.prefixes['balanceUpdate'];    
-    const postfix: string = createHash('sha512').update(`${txHash}`).digest('hex').toLowerCase().substring(0,64);
+    const postfix: string = createHash('sha512').update(`${normalizedTxHash}`).digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
   }
 
   public getLastEthBlockStateAddress(): string {
     const prefix: string = this.prefixes['blockIdUpdate'];    
-    const postfix: string = createHash('sha512').update('0').digest('hex').toLowerCase().substring(0,64);
+    const postfix: string = createHash('sha512').update('LastEthBlockAddress').digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
   }
 
   public getBalanceTimestateAddressPrefix(recipientAddress: string): string {
     const prefix: string = this.prefixes['balanceTimestamp'];
-    const recipient = TransactionManager.normalizeWalletAddress(recipientAddress);
+    const recipient = TransactionManager.normalizeAddress(recipientAddress);
     const postfix: string = createHash('sha512').update(`${recipient}`).digest('hex').toLowerCase().substring(0,54);
 
     return `${prefix}${postfix}`;
@@ -428,42 +452,42 @@ class TransactionManager {
 
   private getIssueEarningDetailsPB(privateKey, payload: IssuePayload, timestamp: number = 0) {
     const details = new earnings_pb.EarningDetails();
-    details.setTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.requestTimestamp));
-    details.setRecipientPublicAddress(TransactionManager.normalizeWalletAddress(payload.wallet));
+    details.setTimestamp(TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.requestTimestamp)));
+    details.setRecipientPublicAddress(TransactionManager.normalizeAddress(payload.wallet));
     BigNumber.set({ EXPONENTIAL_AT: 1e+9 });
     const propsAmount = new BigNumber(payload.amount, 10);
     const tokensAmount = propsAmount.times(1e18);
     const zero = new BigNumber(0, 10);
     details.setAmountEarned(tokensAmount.toString());
     details.setAmountSettled(zero.toString());
-    details.setApplicationPublicAddress(TransactionManager.getAppAddress(privateKey));
+    details.setApplicationPublicAddress(TransactionManager.normalizeAddress(TransactionManager.getAppAddress(privateKey)));
 
     return details;
   }
 
   public getIssueStateAddress(privateKey, payload: IssuePayload, timestamp: number): string {
-    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, 'timestamp' in payload ? payload.timestamp : timestamp);
+    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : timestamp));
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
 
     const addressArgs = [
-      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
-      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
-      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${TransactionManager.getAppAddress(privateKey)}${earningsSignature}`, start: 0, end: 56 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress()), start: 0, end: 4 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getApplicationPublicAddress()), start: 0, end: 4 },
+      { data: `${TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress())}${TransactionManager.normalizeAddress(TransactionManager.getAppAddress(privateKey))}${earningsSignature}`, start: 0, end: 56 },
     ];
 
     return this.getEarningStateAddress('pending', addressArgs);    
   }
 
   public getSettleStateAddress(privateKey, payload: SettlePayload, timestamp: number): string {
-    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, 'timestamp' in payload ? payload.timestamp : timestamp);
+    const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : timestamp));
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
     const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
 
     const addressArgs = [
-      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
-      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
-      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${TransactionManager.getAppAddress(privateKey)}${earningsSignature}`, start: 0, end: 56 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress()), start: 0, end: 4 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getApplicationPublicAddress()), start: 0, end: 4 },
+      { data: `${TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress())}${TransactionManager.normalizeAddress(TransactionManager.getAppAddress(privateKey))}${earningsSignature}`, start: 0, end: 56 },
     ];
 
     return this.getEarningStateAddress('settled', addressArgs);
@@ -513,14 +537,14 @@ class TransactionManager {
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.ISSUE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
     const addressArgs = [
-      { data: issueEarningsDetailsPB.getRecipientPublicAddress(), start: 0, end: 4 },
-      { data: issueEarningsDetailsPB.getApplicationPublicAddress(), start: 0, end: 4 },
-      { data: `${issueEarningsDetailsPB.getRecipientPublicAddress()}${TransactionManager.getAppAddress(privateKey)}${earningsSignature}`, start: 0, end: 56 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress()), start: 0, end: 4 },
+      { data: TransactionManager.normalizeAddress(issueEarningsDetailsPB.getApplicationPublicAddress()), start: 0, end: 4 },
+      { data: `${TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress())}${TransactionManager.normalizeAddress(TransactionManager.getAppAddress(privateKey))}${earningsSignature}`, start: 0, end: 56 },
     ];
 
     const stateAddress = this.getEarningStateAddress('pending', addressArgs);
-    const balanceAddress = this.getBalanceStateAddress(issueEarningsDetailsPB.getRecipientPublicAddress());
-    const balanceTimestampAddress = this.getBalanceTimestateAddressPrefix(issueEarningsDetailsPB.getRecipientPublicAddress());
+    const balanceAddress = this.getBalanceStateAddress(TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress()));
+    const balanceTimestampAddress = this.getBalanceTimestateAddressPrefix(TransactionManager.normalizeAddress(issueEarningsDetailsPB.getRecipientPublicAddress()));
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -544,13 +568,13 @@ class TransactionManager {
   
   private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {    
     const balanceUpdate = new earnings_pb.BalanceUpdate();
-    balanceUpdate.setRecipientPublicAddress(TransactionManager.normalizeWalletAddress(balanceUpdateData.recipient));
+    balanceUpdate.setRecipientPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.recipient));
     balanceUpdate.setRecipientOnchainBalance(balanceUpdateData.recipientBalance);
-    balanceUpdate.setFromPublicAddress(TransactionManager.normalizeWalletAddress(balanceUpdateData.from));
+    balanceUpdate.setFromPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.from));
     balanceUpdate.setFromOnchainBalance(balanceUpdateData.fromBalance);
-    balanceUpdate.setTxHash(balanceUpdateData.txHash);
+    balanceUpdate.setTxHash(TransactionManager.normalizeAddress(balanceUpdateData.txHash));
     balanceUpdate.setBlockId(balanceUpdateData.blockId);
-    balanceUpdate.setTimestamp(balanceUpdateData.timestamp);
+    balanceUpdate.setTimestamp(TransactionManager.normalizeTimestamp(balanceUpdateData.timestamp));
 
         
     const params = new any.Any();
@@ -581,7 +605,7 @@ class TransactionManager {
 
   private getRevokeTransaction(privateKey, stateAddress: string, authAddresses: string[]) {
     const stateAddresses: string[] = [stateAddress];
-    const paramData = JSON.stringify({ timestamp: moment().unix(), addresses: stateAddresses });
+    const paramData = JSON.stringify({ timestamp: TransactionManager.normalizeTimestamp(moment().unix()), addresses: stateAddresses });
     const params = new any.Any();
     params.setValue(Buffer.from(paramData));    
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.REVOKE);
