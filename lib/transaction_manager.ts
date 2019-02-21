@@ -75,6 +75,10 @@ class TransactionManager {
 
   prefixes;
 
+  // if this is turned on transactions won't be submitted until commitTransactions is called
+  accumulateTransactions: boolean;
+  transactions: any[];
+
   static getInstance(args: TransactionManagerOptions) {
     if (_.isNull(instance)) {
       instance = new TransactionManager(args);
@@ -101,6 +105,20 @@ class TransactionManager {
       balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
     };
+
+    this.accumulateTransactions = false;
+    this.transactions = [];
+  }
+
+  async commitTransactions(privateKey): Promise<boolean> {
+    if (this.transactions.length === 0) {
+      throw new Error('No transactions to be committed');
+    }
+    const batch = this.getBatch(privateKey, this.transactions);
+    return this.makeSubmitAPIRequest(batch);
+  }
+  setAccumulateTransactions(b: boolean): void {
+    this.accumulateTransactions = b;
   }
 
   httpPrefix(): string {
@@ -241,9 +259,13 @@ class TransactionManager {
       timestamp: TransactionManager.normalizeTimestamp(timestamp),
     };
     transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[recipientBalanceAddress, recipientBalanceTimestampAddressPrefix, fromBalanceAddress, fromBalanceTimestampAddressPrefix, balanceUpdateAddress]));    
-
-    const batch = this.getBatch(privateKey, transactions);
-    return this.makeSubmitAPIRequest(batch);
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
   }
 
   public async submitIssueTransaction(privateKey, issuePayloads:IssuePayload[], timestamp: number):Promise<boolean> {
@@ -261,8 +283,13 @@ class TransactionManager {
   public async submitNewEthBlockIdTransaction(privateKey, blockId: number): Promise<boolean> {
     const transactions = [];
     transactions.push(this.getLastEthBlockTransaction(privateKey, blockId));
-    const batch = this.getBatch(privateKey, transactions);
-    return this.makeSubmitAPIRequest(batch);
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
   }
 
   public async statusLookup(batchUri: string): Promise<boolean> {
