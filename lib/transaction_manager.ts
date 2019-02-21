@@ -98,7 +98,7 @@ class TransactionManager {
       settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
       balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),
       balanceTimestamp: createHash('sha512').update('pending-props:earnings:bal-ts').digest('hex').substring(0, 6),
-      balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-trx').digest('hex').substring(0, 6),
+      balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
     };
   }
