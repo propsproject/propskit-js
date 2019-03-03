@@ -96,17 +96,11 @@ export namespace Settlements {
 }
 
 export class BalanceUpdate extends jspb.Message {
-  getRecipientPublicAddress(): string;
-  setRecipientPublicAddress(value: string): void;
+  getPublicAddress(): string;
+  setPublicAddress(value: string): void;
 
-  getRecipientOnchainBalance(): string;
-  setRecipientOnchainBalance(value: string): void;
-
-  getFromPublicAddress(): string;
-  setFromPublicAddress(value: string): void;
-
-  getFromOnchainBalance(): string;
-  setFromOnchainBalance(value: string): void;
+  getOnchainBalance(): string;
+  setOnchainBalance(value: string): void;
 
   getTxHash(): string;
   setTxHash(value: string): void;
@@ -129,10 +123,8 @@ export class BalanceUpdate extends jspb.Message {
 
 export namespace BalanceUpdate {
   export type AsObject = {
-    recipientPublicAddress: string,
-    recipientOnchainBalance: string,
-    fromPublicAddress: string,
-    fromOnchainBalance: string,
+    publicAddress: string,
+    onchainBalance: string,
     txHash: string,
     blockId: number,
     timestamp: number,

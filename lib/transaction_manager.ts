@@ -40,10 +40,8 @@ interface WalletBalance {
 }
 
 interface BalanceUpdate {
-  recipient: string;
-  recipientBalance: string;
-  from: string;
-  fromBalance: string;
+  address: string;
+  balance: string;  
   txHash: string;
   blockId: number;
   timestamp: number;  
@@ -239,26 +237,21 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
-  public async submitBalanceUpdateTransaction(privateKey, recipient: string, recipientBalance: string, from: string, fromBalance:string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
-    const recipientAddress = TransactionManager.normalizeAddress(recipient);
-    const fromAddress = TransactionManager.normalizeAddress(from);
+  public async submitBalanceUpdateTransaction(privateKey, _address: string, _addressBalance: string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
+    const address = TransactionManager.normalizeAddress(_address);    
     const normalizedTxHash = TransactionManager.normalizeAddress(txHash);
     const transactions = [];
-    const recipientBalanceAddress: string = this.getBalanceStateAddress(recipientAddress);
-    const recipientBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(recipientAddress);
-    const fromBalanceAddress: string = this.getBalanceStateAddress(fromAddress);
-    const fromBalanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(fromAddress);
-    const balanceUpdateAddress: string = this.getBalanceUpdateAddress(normalizedTxHash);
+    const balanceAddress: string = this.getBalanceStateAddress(address);
+    const balanceTimestampAddressPrefix: string = this.getBalanceTimestateAddressPrefix(address);
+    const balanceUpdateAddress: string = this.getBalanceUpdateAddress(normalizedTxHash, address);
     const balanceUpdateData: BalanceUpdate = {
-      recipient: recipientAddress,
-      recipientBalance,
-      from: fromAddress,
-      fromBalance,
+      address,
+      balance: _addressBalance,      
       txHash: normalizedTxHash,
       blockId,
       timestamp: TransactionManager.normalizeTimestamp(timestamp),
     };
-    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[recipientBalanceAddress, recipientBalanceTimestampAddressPrefix, fromBalanceAddress, fromBalanceTimestampAddressPrefix, balanceUpdateAddress]));    
+    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[balanceAddress, balanceTimestampAddressPrefix, balanceUpdateAddress]));    
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -443,12 +436,13 @@ class TransactionManager {
     return `${prefix}${postfix}`;
   }
 
-  public getBalanceUpdateAddress(txHash: string): string {
+  public getBalanceUpdateAddress(txHash: string, address: string): string {
     const normalizedTxHash: string = TransactionManager.normalizeAddress(txHash);
     const prefix: string = this.prefixes['balanceUpdate'];    
-    const postfix: string = createHash('sha512').update(`${normalizedTxHash}`).digest('hex').toLowerCase().substring(0,64);
+    const body: string = createHash('sha512').update(`${normalizedTxHash}`).digest('hex').toLowerCase().substring(0,40);
+    const postfix: string = createHash('sha512').update(`${address}`).digest('hex').toLowerCase().substring(0,24);
 
-    return `${prefix}${postfix}`;
+    return `${prefix}${body}${postfix}`;
   }
 
   public getLastEthBlockStateAddress(): string {
@@ -595,10 +589,8 @@ class TransactionManager {
   
   private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {    
     const balanceUpdate = new earnings_pb.BalanceUpdate();
-    balanceUpdate.setRecipientPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.recipient));
-    balanceUpdate.setRecipientOnchainBalance(balanceUpdateData.recipientBalance);
-    balanceUpdate.setFromPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.from));
-    balanceUpdate.setFromOnchainBalance(balanceUpdateData.fromBalance);
+    balanceUpdate.setPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.address));
+    balanceUpdate.setOnchainBalance(balanceUpdateData.balance);    
     balanceUpdate.setTxHash(TransactionManager.normalizeAddress(balanceUpdateData.txHash));
     balanceUpdate.setBlockId(balanceUpdateData.blockId);
     balanceUpdate.setTimestamp(TransactionManager.normalizeTimestamp(balanceUpdateData.timestamp));
