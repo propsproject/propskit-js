@@ -20,8 +20,7 @@ describe('Transaction Manager tests', async () => {
 
   const options = {
     familyName: 'pending-earnings',
-    familyVersion: '1.0',
-    https: false,
+    familyVersion: '1.0',    
     host: '127.0.0.1',
     port: 8008,
   };
@@ -33,6 +32,19 @@ describe('Transaction Manager tests', async () => {
     const pubk: string = TransactionManager.getPublicKey(privateKey);
     expect(pubk).to.be.equal(publicKey);
   });
+
+  // it('Temp test issue using library', async() => {
+  //   const pk: string = 'fd899d64b5209b53e6b6380dbe195500d988b2184d3a7076681370d5d1c58408';
+  //   const ts: number = 1553435328;
+  //   // const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
+  //   const userId: string = 'user1';
+  //   const applicationId: string = 'app1';
+  //   const amount: number = 19.5;    
+  //   const tm: TransactionManager = new TransactionManager(options);
+  //   const issuePayload: IssuePayload = { userId, applicationId, amount, description: 'Broadcasting' };
+  //   const res = await tm.submitIssueTransaction(pk, [issuePayload], ts);
+  //   console.log(`res=${res}`);    
+  // });
 
   it('Succesfully calculate a pending state address', async() => {
     const pk: string = 'fd899d64b5209b53e6b6380dbe195500d988b2184d3a7076681370d5d1c58408';
