@@ -52,6 +52,42 @@ export namespace RPCRequest {
   }
 }
 
+export class BalanceUpdate extends jspb.Message {
+  getPublicAddress(): string;
+  setPublicAddress(value: string): void;
+
+  getOnchainBalance(): string;
+  setOnchainBalance(value: string): void;
+
+  getTxHash(): string;
+  setTxHash(value: string): void;
+
+  getBlockId(): number;
+  setBlockId(value: number): void;
+
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BalanceUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: BalanceUpdate): BalanceUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BalanceUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BalanceUpdate;
+  static deserializeBinaryFromReader(message: BalanceUpdate, reader: jspb.BinaryReader): BalanceUpdate;
+}
+
+export namespace BalanceUpdate {
+  export type AsObject = {
+    publicAddress: string,
+    onchainBalance: string,
+    txHash: string,
+    blockId: number,
+    timestamp: number,
+  }
+}
+
 export enum Method {
   ISSUE = 0,
   REVOKE = 1,

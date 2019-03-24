@@ -1,7 +1,7 @@
-interface IssuePayload {
-  wallet: string;
-  amount: number;
-  timestamp?: number;
+import EarningPayload from './earning_payload';
+
+interface IssuePayload extends EarningPayload {  
+  description?: string;  
 }
 
 export default IssuePayload;

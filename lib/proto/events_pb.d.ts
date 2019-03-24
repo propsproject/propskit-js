@@ -23,6 +23,9 @@ export class EarningEvent extends jspb.Message {
   getMessage(): string;
   setMessage(value: string): void;
 
+  getDescription(): string;
+  setDescription(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EarningEvent.AsObject;
   static toObject(includeInstance: boolean, msg: EarningEvent): EarningEvent.AsObject;
@@ -40,6 +43,7 @@ export namespace EarningEvent {
     revokeaddress: string,
     settleaddress: string,
     message: string,
+    description: string,
   }
 }
 
@@ -51,6 +55,9 @@ export class BalanceEvent extends jspb.Message {
 
   getMessage(): string;
   setMessage(value: string): void;
+
+  getDescription(): string;
+  setDescription(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BalanceEvent.AsObject;
@@ -66,6 +73,7 @@ export namespace BalanceEvent {
   export type AsObject = {
     balance?: balance_pb.Balance.AsObject,
     message: string,
+    description: string,
   }
 }
 

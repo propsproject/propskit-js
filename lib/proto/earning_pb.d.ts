@@ -43,11 +43,14 @@ export class EarningDetails extends jspb.Message {
   getAmountSettled(): string;
   setAmountSettled(value: string): void;
 
-  getRecipientPublicAddress(): string;
-  setRecipientPublicAddress(value: string): void;
+  getUserId(): string;
+  setUserId(value: string): void;
 
-  getApplicationPublicAddress(): string;
-  setApplicationPublicAddress(value: string): void;
+  getApplicationId(): string;
+  setApplicationId(value: string): void;
+
+  getDescription(): string;
+  setDescription(value: string): void;
 
   getStatus(): Status;
   setStatus(value: Status): void;
@@ -67,8 +70,9 @@ export namespace EarningDetails {
     timestamp: number,
     amountEarned: string,
     amountSettled: string,
-    recipientPublicAddress: string,
-    applicationPublicAddress: string,
+    userId: string,
+    applicationId: string,
+    description: string,
     status: Status,
   }
 }
@@ -92,42 +96,6 @@ export class Settlements extends jspb.Message {
 export namespace Settlements {
   export type AsObject = {
     earningAddressesList: Array<string>,
-  }
-}
-
-export class BalanceUpdate extends jspb.Message {
-  getPublicAddress(): string;
-  setPublicAddress(value: string): void;
-
-  getOnchainBalance(): string;
-  setOnchainBalance(value: string): void;
-
-  getTxHash(): string;
-  setTxHash(value: string): void;
-
-  getBlockId(): number;
-  setBlockId(value: number): void;
-
-  getTimestamp(): number;
-  setTimestamp(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): BalanceUpdate.AsObject;
-  static toObject(includeInstance: boolean, msg: BalanceUpdate): BalanceUpdate.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: BalanceUpdate, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): BalanceUpdate;
-  static deserializeBinaryFromReader(message: BalanceUpdate, reader: jspb.BinaryReader): BalanceUpdate;
-}
-
-export namespace BalanceUpdate {
-  export type AsObject = {
-    publicAddress: string,
-    onchainBalance: string,
-    txHash: string,
-    blockId: number,
-    timestamp: number,
   }
 }
 
@@ -175,7 +143,6 @@ export enum Status {
   PENDING = 0,
   REVOKED = 1,
   SETTLED = 2,
-  REASSIGNED = 3,
-  ERROR = 4,
+  ERROR = 3,
 }
 

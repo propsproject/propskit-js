@@ -1,7 +1,7 @@
-interface SettlePayload {
-  wallet: string;
-  amount: number;
-  timestamp?: number;
+import EarningPayload from './earning_payload';
+
+interface SettlePayload extends EarningPayload {  
+  wallet: string;  
 }
 
 export default SettlePayload;

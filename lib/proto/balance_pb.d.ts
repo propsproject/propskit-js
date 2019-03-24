@@ -3,21 +3,65 @@
 
 import * as jspb from "google-protobuf";
 
-export class Balance extends jspb.Message {
-  getRecipientPublicAddress(): string;
-  setRecipientPublicAddress(value: string): void;
-
+export class BalanceDetails extends jspb.Message {
   getPending(): string;
   setPending(value: string): void;
+
+  getTotalPending(): string;
+  setTotalPending(value: string): void;
 
   getTotal(): string;
   setTotal(value: string): void;
 
-  getLastTimestamp(): number;
-  setLastTimestamp(value: number): void;
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
 
   getLastEthBlockId(): number;
   setLastEthBlockId(value: number): void;
+
+  getLastUpdateType(): UpdateType;
+  setLastUpdateType(value: UpdateType): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BalanceDetails.AsObject;
+  static toObject(includeInstance: boolean, msg: BalanceDetails): BalanceDetails.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BalanceDetails, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BalanceDetails;
+  static deserializeBinaryFromReader(message: BalanceDetails, reader: jspb.BinaryReader): BalanceDetails;
+}
+
+export namespace BalanceDetails {
+  export type AsObject = {
+    pending: string,
+    totalPending: string,
+    total: string,
+    timestamp: number,
+    lastEthBlockId: number,
+    lastUpdateType: UpdateType,
+  }
+}
+
+export class Balance extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): void;
+
+  getApplicationId(): string;
+  setApplicationId(value: string): void;
+
+  hasBalanceDetails(): boolean;
+  clearBalanceDetails(): void;
+  getBalanceDetails(): BalanceDetails | undefined;
+  setBalanceDetails(value?: BalanceDetails): void;
+
+  hasPreCutoffDetails(): boolean;
+  clearPreCutoffDetails(): void;
+  getPreCutoffDetails(): BalanceDetails | undefined;
+  setPreCutoffDetails(value?: BalanceDetails): void;
+
+  getType(): BalanceType;
+  setType(value: BalanceType): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Balance.AsObject;
@@ -31,46 +75,17 @@ export class Balance extends jspb.Message {
 
 export namespace Balance {
   export type AsObject = {
-    recipientPublicAddress: string,
-    pending: string,
-    total: string,
-    lastTimestamp: number,
-    lastEthBlockId: number,
+    userId: string,
+    applicationId: string,
+    balanceDetails?: BalanceDetails.AsObject,
+    preCutoffDetails?: BalanceDetails.AsObject,
+    type: BalanceType,
   }
 }
 
-export class BalanceTimestamp extends jspb.Message {
-  getTimestamp(): number;
-  setTimestamp(value: number): void;
-
-  hasBalance(): boolean;
-  clearBalance(): void;
-  getBalance(): Balance | undefined;
-  setBalance(value?: Balance): void;
-
-  getUpdatetype(): UpdateType;
-  setUpdatetype(value: UpdateType): void;
-
-  getBlockId(): number;
-  setBlockId(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): BalanceTimestamp.AsObject;
-  static toObject(includeInstance: boolean, msg: BalanceTimestamp): BalanceTimestamp.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: BalanceTimestamp, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): BalanceTimestamp;
-  static deserializeBinaryFromReader(message: BalanceTimestamp, reader: jspb.BinaryReader): BalanceTimestamp;
-}
-
-export namespace BalanceTimestamp {
-  export type AsObject = {
-    timestamp: number,
-    balance?: Balance.AsObject,
-    updatetype: UpdateType,
-    blockId: number,
-  }
+export enum BalanceType {
+  USER = 0,
+  WALLET = 1,
 }
 
 export enum UpdateType {
