@@ -94,5 +94,6 @@ export enum Method {
   SETTLE = 2,
   BALANCE_UPDATE = 3,
   LAST_ETH_BLOCK_UPDATE = 4,
+  WALLET_LINK = 5,
 }
 

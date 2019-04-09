@@ -6,6 +6,7 @@ const { protobuf } = require('sawtooth-sdk');
 const any = require('google-protobuf/google/protobuf/any_pb.js');
 const payloads_pb = require('./proto/payload_pb');
 const balance_pb = require('./proto/balance_pb');
+const users_pb = require('./proto/users_pb');
 const earnings_pb = require('./proto/earning_pb');
 const ethUtil = require('ethereumjs-util');
 const { createHash } = require('crypto');
@@ -16,6 +17,7 @@ import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
 import { Balance } from './proto/balance_pb';
 import { LastEthBlock } from './proto/earning_pb';
+import { WalletToUser } from './proto/users_pb';
 
 interface SubmitAPIResponse {
   batchStatusUri: string;
@@ -40,6 +42,11 @@ interface WalletBalance {
   wallet: string;
 }
 
+interface ApplicationUser {
+  userId: string;
+  applicationId: string;
+}
+
 interface AppUserBalance {
   pending: string; // bigNumber
   totalPending: string; //bigNumber
@@ -47,6 +54,7 @@ interface AppUserBalance {
   timestamp: number;
   applicationId: string;
   userId: string;
+  linkedWallet: string;
 }
 
 interface BalanceUpdate {
@@ -111,6 +119,7 @@ class TransactionManager {
       balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),      
       balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
+      walletLink: createHash('sha512').update('pending-props:earnings:walletl').digest('hex').substring(0, 6),
     };
 
     this.accumulateTransactions = false;
@@ -202,6 +211,37 @@ class TransactionManager {
     }
   }
 
+  async getLinkedWalletApplicationUsers(walletLinkAddress: string): Promise<ApplicationUser[]> {        
+    const options = {
+      method: 'GET',
+      uri: this.stateAddressUrl(walletLinkAddress),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    try {
+      const res = JSON.parse(await rp(options));    
+      const data = res.data;
+      const applicationUsers: ApplicationUser[] = [];
+
+      data.forEach((entry) => {
+        const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
+        const walletToUser: WalletToUser = new users_pb.WalletToUser.deserializeBinary(bytes);
+        const walletToUserList =  walletToUser.getUsersList();
+        for (let i = 0; i < walletToUserList.length; i = i + 1) {
+          const appUser: ApplicationUser = {
+            userId: walletToUserList[i].getUserId(),
+            applicationId: walletToUserList[i].getApplicationId(),
+          };
+          applicationUsers.push(appUser);
+        }        
+      });
+
+      return applicationUsers;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getBalanceByAppUser(applicationId: string, userId: string): Promise<AppUserBalance> {    
     const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
     const options = {
@@ -226,6 +266,7 @@ class TransactionManager {
           timestamp: TransactionManager.normalizeTimestamp(balance.getBalanceDetails().getTimestamp()),
           applicationId: balance.getApplicationId(),
           userId: balance.getUserId(),
+          linkedWallet: balance.getLinkedWallet(),
         };
       });
 
@@ -250,10 +291,24 @@ class TransactionManager {
 
   public async submitRevokeTransaction(privateKey, stateAddresses:string[], applicationId: string, userId: string):Promise<boolean> {    
     const transactions = [];
-    const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);    
+    const authAddresses = [];
+    const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
+    authAddresses.push(balanceAddress);
+    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
+    const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(applicationId, userId);
+    if (appUserBalance.linkedWallet.length > 0) {
+      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
+      authAddresses.push(walletLinkAddress);
+      const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
+        if (applicationUsers[i].applicationId !== applicationId || applicationUsers[i].userId !== userId) {
+          authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+        }
+      }
+    }
 
     for (let i = 0; i < stateAddresses.length; i += 1) {
-      transactions.push(this.getRevokeTransaction(privateKey, stateAddresses[i],[balanceAddress]));
+      transactions.push(this.getRevokeTransaction(privateKey, stateAddresses[i],authAddresses));
     }
 
     const batch = this.getBatch(privateKey, transactions);
@@ -281,7 +336,25 @@ class TransactionManager {
       blockId,
       timestamp: TransactionManager.normalizeTimestamp(timestamp),
     };
-    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,[balanceAddress, balanceUpdateAddress]));    
+    const authAddresses = [];
+    authAddresses.push(balanceAddress);
+    authAddresses.push(balanceUpdateAddress);
+
+    const walletLinkAddress = this.getWalletLinkAddress(address);
+    authAddresses.push(walletLinkAddress);
+    let applicationUsers:ApplicationUser[] = [];
+    try {
+      applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+    } catch (error) {
+      // do nothing - it can be empty
+    }
+    if (applicationUsers.length > 0) {
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
+        authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));        
+      }
+    }
+    
+    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,authAddresses));    
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -306,6 +379,23 @@ class TransactionManager {
   public async submitNewEthBlockIdTransaction(privateKey, blockId: number): Promise<boolean> {
     const transactions = [];
     transactions.push(this.getLastEthBlockTransaction(privateKey, blockId));
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
+  }
+
+  public async submitLinkWalletTransaction(privateKey, _address: string, applicationId: string, userId: string, signature: string) {
+    const address = TransactionManager.normalizeAddress(_address);
+    const transactions = [];
+    const appUser:ApplicationUser = {
+      applicationId,
+      userId,
+    };
+    transactions.push(this.getLinkWalletTransaction(privateKey, address, appUser, signature));
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -475,6 +565,13 @@ class TransactionManager {
     return `${prefix}${body}${postfix}`;
   }
 
+  public getWalletLinkAddress(address: string): string {
+    const normalizedAddress: string = TransactionManager.normalizeAddress(address);
+    const prefix: string = this.prefixes['walletLink'];    
+    const body: string = createHash('sha512').update(`${normalizedAddress}`).digest('hex').toLowerCase().substring(0,64);    
+    return `${prefix}${body}`;
+  }
+
   public getLastEthBlockStateAddress(): string {
     const prefix: string = this.prefixes['blockIdUpdate'];    
     const postfix: string = createHash('sha512').update('LastEthBlockAddress').digest('hex').toLowerCase().substring(0,64);
@@ -542,6 +639,53 @@ class TransactionManager {
     return this.getEarningStateAddress('settled', addressArgs);
   }
 
+  private async getLinkWalletTransaction(privateKey, address: string, appUser: ApplicationUser, sig: string) {
+    const walletToUser:WalletToUser = new users_pb.WalletToUser();
+    walletToUser.setAddress(address);
+    const applicationUser = new users_pb.ApplicationUser();
+    applicationUser.setUserId(appUser.userId);
+    applicationUser.setApplicationId(appUser.applicationId);
+    applicationUser.setSignature(sig);
+    applicationUser.setTimestamp(moment().unix());
+    walletToUser.addUsers(applicationUser);
+    const authAddresses = [];
+    const walletLinkAddress = this.getWalletLinkAddress(address);
+    const walletBalanceAddress = this.getBalanceStateAddress('', address);
+    const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
+    authAddresses.push(walletLinkAddress);
+    authAddresses.push(walletBalanceAddress);
+    authAddresses.push(userBalanceAddress);
+    const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+    for (let i = 0; i < applicationUsers.length; i = i + 1) {
+      if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
+        authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+      }
+    }
+    const params = new any.Any();
+    params.setValue(walletToUser.serializeBinary());
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/users_pb.WalletToUser');
+    const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.WALLET_LINK);
+    const rpcRequestBytes = rpcRequest.serializeBinary();    
+    const transactionHeaderBytes = protobuf.TransactionHeader.encode({
+        familyName: this.familyName,
+        familyVersion: this.familyVersion,
+        inputs: authAddresses,
+        outputs: authAddresses,
+        signerPublicKey: TransactionManager.getPublicKey(privateKey),
+        batcherPublicKey: TransactionManager.getPublicKey(privateKey),
+        dependencies: [],
+        payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
+    }).finish();
+
+    const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
+    const tx =  protobuf.Transaction.create({
+      header: transactionHeaderBytes,
+      headerSignature: signature,
+      payload: rpcRequestBytes,
+    });    
+    return tx;
+  }
+
   private getLastEthBlockTransaction(privateKey, blockId: number) {
     // prepare transaction
     // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
@@ -573,7 +717,7 @@ class TransactionManager {
     });    
     return tx;
   }
-  private getIssueTransaction(privateKey, issueEarningsDetailsPB: any) {
+  private async getIssueTransaction(privateKey, issueEarningsDetailsPB: any) {
     // prepare transaction
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
     const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
@@ -593,12 +737,26 @@ class TransactionManager {
     ];
 
     const stateAddress = this.getEarningStateAddress('pending', addressArgs);
-    const balanceAddress = this.getBalanceStateAddress(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());    
+    const balanceAddress = this.getBalanceStateAddress(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
+    const stateAddresses = [stateAddress, balanceAddress];
+    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
+    const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
+    if (appUserBalance.linkedWallet.length > 0) {
+      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
+      stateAddresses.push(walletLinkAddress);
+      const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+      for (let i = 0; i< applicationUsers.length; i = i + 1) {
+        if (applicationUsers[i].applicationId !== issueEarningsDetailsPB.getApplicationId() || applicationUsers[i].userId !== issueEarningsDetailsPB.getUserId()) {
+          stateAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+        }
+      }
+    }
+    
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
-        inputs: [balanceAddress, stateAddress],
-        outputs: [balanceAddress, stateAddress],
+        inputs: stateAddresses,
+        outputs: stateAddresses,
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],

@@ -63,6 +63,9 @@ export class Balance extends jspb.Message {
   getType(): BalanceType;
   setType(value: BalanceType): void;
 
+  getLinkedWallet(): string;
+  setLinkedWallet(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Balance.AsObject;
   static toObject(includeInstance: boolean, msg: Balance): Balance.AsObject;
@@ -80,6 +83,7 @@ export namespace Balance {
     balanceDetails?: BalanceDetails.AsObject,
     preCutoffDetails?: BalanceDetails.AsObject,
     type: BalanceType,
+    linkedWallet: string,
   }
 }
 
