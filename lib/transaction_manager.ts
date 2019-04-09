@@ -655,12 +655,20 @@ class TransactionManager {
     authAddresses.push(walletLinkAddress);
     authAddresses.push(walletBalanceAddress);
     authAddresses.push(userBalanceAddress);
-    const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
-    for (let i = 0; i < applicationUsers.length; i = i + 1) {
-      if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
-        authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+    let applicationUsers:ApplicationUser[] = [];
+    try {
+      applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+    } catch (error) {
+      // do nothing
+    }
+    if (applicationUsers.length > 0) {
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
+        if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
+          authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+        }
       }
     }
+    
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/users_pb.WalletToUser');
