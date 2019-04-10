@@ -4,7 +4,10 @@
   "description": "Communicate with the pending props sidechain",
   "main": "dist/index.ts",
   "scripts": {
-    "test": "NODE_ENV=test mocha $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit",
+    "test": "NODE_ENV=test mocha --timeout 60000 $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit || :",
+    "oldtest": "NODE_ENV=test mocha --timeout 60000 $NODE_DEBUG_OPTION test/test.js --exit || :",
+    "pretest": "rm -f /tmp/out.log && cd scripts && sh ./local-sawtooth.sh && cd ../",
+    "posttest": "kill $(ps aux | egrep '[g]o run cmd/main.go -c -f ./configs/development.json|[d]ocker-compose -f ./sawtooth-default.yaml up|[/]var.*configs/development' | awk '{print $2}') && cd scripts && sh ./destroy-local-sawtooth.sh && cd ../",
     "build": "npm run transpile",
     "transpile": "tsc && npm run copyfiles",
     "copyfiles": "copyfiles lib/**/*.lua lib/**/*.js dist -u 1",
@@ -22,6 +25,7 @@
     "@types/chai-as-promised": "^7.1.0",
     "@types/node": "^10.12.2",
     "apidoc": "^0.16.1",
+    "async-wait-until": "^1.2.4",
     "bignumber.js": "^7.2.1",
     "cbor": "^4.1.1",
     "chai": "^4.1.2",
@@ -44,7 +48,7 @@
     "ts-node": "^6.0.5",
     "typescript": "^2.8.3",
     "uuid": "^3.1.0",
-    "web3": "^0.20.6",
+    "web3": "1.0.0-beta.35",
     "wtfnode": "^0.7.0"
   },
   "devDependencies": {

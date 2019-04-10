@@ -12,6 +12,8 @@ const ethUtil = require('ethereumjs-util');
 const { createHash } = require('crypto');
 const moment = require('moment');
 const BigNumber = require('bignumber.js');
+const Web3 = require('web3');
+const web3 = new Web3();
 
 import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
@@ -40,6 +42,9 @@ interface WalletBalance {
   total: string; // bigNumber
   timestamp: number;
   wallet: string;
+  linkedWallet: string;
+  lastUpdateType: number;
+  type: number;
 }
 
 interface ApplicationUser {
@@ -55,6 +60,8 @@ interface AppUserBalance {
   applicationId: string;
   userId: string;
   linkedWallet: string;
+  lastUpdateType: number;
+  type: number;
 }
 
 interface BalanceUpdate {
@@ -185,6 +192,18 @@ class TransactionManager {
     return TransactionManager.normalizeAddress(ethUtil.pubToAddress(signer.getPublicKey().asBytes(), true).toString('hex'));
   }
 
+  static async signMessage(msg: string, address: string, pk: string) {
+    const privateKey = pk;
+    const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
+    web3.eth.accounts.wallet.add(account);
+    web3.eth.defaultAccount = account.address;
+    return web3.eth.sign(msg, address);
+  }
+
+  static async recoverFromSignature(msg: string, sig: string) {    
+    return web3.eth.accounts.recover(msg, sig);
+  }
+
   async getLatestEthBlockId(): Promise<number> {
     const lastEthBlockIdAddress: string = this.getLastEthBlockStateAddress();
     const options = {
@@ -267,6 +286,8 @@ class TransactionManager {
           applicationId: balance.getApplicationId(),
           userId: balance.getUserId(),
           linkedWallet: balance.getLinkedWallet(),
+          lastUpdateType: balance.getBalanceDetails().getLastUpdateType(),
+          type: balance.getType(),
         };
       });
 
@@ -285,6 +306,9 @@ class TransactionManager {
       total: appUserBalance.total,
       timestamp: appUserBalance.timestamp,
       wallet: appUserBalance.userId,
+      linkedWallet: appUserBalance.linkedWallet,
+      lastUpdateType: appUserBalance.lastUpdateType,
+      type: appUserBalance.type,
     };
     return walletBalance;    
   }
@@ -369,7 +393,7 @@ class TransactionManager {
     const transactions = [];
 
     for (let i = 0; i < issuePayloads.length; i += 1) {  
-      transactions.push(this.getIssueTransaction(privateKey, this.getIssueEarningDetailsPB(privateKey, issuePayloads[i])));
+      transactions.push(await this.getIssueTransaction(privateKey, this.getIssueEarningDetailsPB(privateKey, issuePayloads[i])));
     }
 
     const batch = this.getBatch(privateKey, transactions);
@@ -395,7 +419,7 @@ class TransactionManager {
       applicationId,
       userId,
     };
-    transactions.push(this.getLinkWalletTransaction(privateKey, address, appUser, signature));
+    transactions.push(await this.getLinkWalletTransaction(privateKey, address, appUser, signature));
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -471,6 +495,10 @@ class TransactionManager {
             break;
           case 'BALANCE':
             dataObject = new balance_pb.Balance.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;  
+          case 'WALLETLINK':
+            dataObject = new users_pb.WalletToUser.deserializeBinary(bytes);
             ret = (dataObject.toObject());
             break;  
         }         
@@ -606,6 +634,10 @@ class TransactionManager {
     return details;
   }
 
+  public issueStateAddressToRevokeStateAddress(issueStateAddress: string) {
+    return `${this.prefixes['revoked']}${issueStateAddress.substring(6)}`;
+  }
+
   public getIssueStateAddress(privateKey, payload: IssuePayload, timestamp: number): string {
     const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : timestamp));
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
@@ -671,7 +703,7 @@ class TransactionManager {
     
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
-    params.setTypeUrl('github.com/propsproject/pending-props/protos/users_pb.WalletToUser');
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.WalletToUser');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.WALLET_LINK);
     const rpcRequestBytes = rpcRequest.serializeBinary();    
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
@@ -749,11 +781,11 @@ class TransactionManager {
     const stateAddresses = [stateAddress, balanceAddress];
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
-    if (appUserBalance.linkedWallet.length > 0) {
+    if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
       const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
       stateAddresses.push(walletLinkAddress);
       const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
-      for (let i = 0; i< applicationUsers.length; i = i + 1) {
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== issueEarningsDetailsPB.getApplicationId() || applicationUsers[i].userId !== issueEarningsDetailsPB.getUserId()) {
           stateAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
         }
@@ -860,4 +892,4 @@ class TransactionManager {
   }
 }
 
-export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, WalletBalance };
+export { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, WalletBalance, ApplicationUser, AppUserBalance };
