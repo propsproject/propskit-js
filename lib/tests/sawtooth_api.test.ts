@@ -96,10 +96,10 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
         return false;
       }
     },              90000, 1000);
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for one more second before testing ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for one more second before testing ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > 1);
     },              10000, 1000);
   });
@@ -118,11 +118,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitIssueTransaction(pkSawtooth, [issuePayload], issueTimestamp);
     expect(res).to.be.equal(true);    
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
     const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp);
@@ -167,11 +167,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitRevokeTransaction(pkSawtooth, [earningAddresses[0]], app, user);
     expect(res).to.be.equal(true);    
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
     const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp);
@@ -213,11 +213,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock, txHash, blockNum, timestamp);
     expect(res).to.be.equal(true);
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
     
@@ -241,11 +241,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletAddress, app, user, sig);
     expect(res).to.be.equal(true);
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
 
@@ -276,11 +276,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     const res: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1);
     expect(res).to.be.equal(true);
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
     const lastEthBlockAddress = tm.getLastEthBlockStateAddress();
@@ -311,11 +311,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(res3).to.be.equal(true);
     const res: boolean = await tm.commitTransactions(pkSawtooth);
     expect(res).to.be.equal(true);
-    global.timeOfStart = Math.floor(Date.now() / 1000);
+    const timeOfStart = Math.floor(Date.now() / 1000);
         // wait a bit for it to be on chain
     await waitUntil(() => {
-      const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+      const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 1000);
     const lastEthBlockAddress = tm.getLastEthBlockStateAddress();
@@ -371,11 +371,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //         // issue
 //     await pendingProps.issue(app, user, amounts[0], descriptions[0], addresses);
 //     console.log(JSON.stringify(addresses));
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > waitTimeUntilOnChain);
 //     },              10000, 1000);
 //     const balanceAddress = pendingProps.CONFIG.earnings.namespaces.balanceAddress(app, user);
@@ -410,11 +410,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //     const app = 'app1';
 //     await pendingProps.revoke([earningAddresses[2]], revokeAddress);
 //     console.log(JSON.stringify(revokeAddress));
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > waitTimeUntilOnChain);
 //     },              10000, 1000);
 
@@ -445,11 +445,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //     const app = 'app1';
 
 //     await pendingProps.externalBalanceUpdate(walletAddress, balanceAtBlock2, txHash2, blockNum2, timestamp2);
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > (waitTimeUntilOnChain));
 //     },              300000, 1000);
 
@@ -504,11 +504,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 
 //         // issue
 //     await pendingProps.linkWallet(walletAddress, app, user, sig);
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > waitTimeUntilOnChain);
 //     },              10000, 1000);
 //     const userBalanceAddress = pendingProps.CONFIG.earnings.namespaces.balanceAddress(app, user);
@@ -571,11 +571,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //     console.log(JSON.stringify(addresses));
 //     earningAddresses = [];
 //     earningAddresses.push(addresses['stateAddress']);
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > waitTimeUntilOnChain);
 //     },              10000, 1000);
 //     const balanceAddress1 = pendingProps.CONFIG.earnings.namespaces.balanceAddress(app1, user1);
@@ -619,11 +619,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //     const user2 = 'user1';
 //     await pendingProps.revoke([earningAddresses[0]], addresses);
 //     console.log(JSON.stringify(addresses));
-//     global.timeOfStart = Math.floor(Date.now() / 1000);
+//     const timeOfStart = Math.floor(Date.now() / 1000);
 //         // wait a bit for it to be on chain
 //     await waitUntil(() => {
-//       const timePassed =  Math.floor(Date.now() / 1000) - global.timeOfStart;
-//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - global.timeOfStart}...`);
+//       const timePassed =  Math.floor(Date.now() / 1000) - timeOfStart;
+//       console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
 //       return (timePassed > waitTimeUntilOnChain);
 //     },              10000, 1000);
 //     const balanceAddress1 = pendingProps.CONFIG.earnings.namespaces.balanceAddress(app1, user1);
