@@ -1,4 +1,4 @@
-import {BalanceEvent, EarningEvent} from '../../generated/events_pb';
+import {BalanceEvent, EarningEvent} from '../../proto/events_pb';
 import {Event} from '../../sawtooth-sdk-ts/events_pb';
 
 export class DecodedEarningEvent {

@@ -1,6 +1,12 @@
 #!/bin/bash
 
 CURRENT_DIR=${1}
+echo $CURRENT_DIR
+if [[ $CURRENT_DIR =~ "/scripts/" || $CURRENT_DIR == '' ]]; then
+    echo "The script needs to be run from npm in the root folder, please use 'npm run protos'"
+    exit
+fi
+
 PROTOS_PATH="${CURRENT_DIR}/protos"
 PROTOC_GEN_TS_PATH="${CURRENT_DIR}/node_modules/.bin/protoc-gen-ts"
 
@@ -11,9 +17,13 @@ PAYLOAD_PROTO="${PROTOS_PATH}/payload.proto"
 PROTO_PB_OUT="${CURRENT_DIR}/src/lib/generated"
 
 TEMP_DIR="${CURRENT_DIR}/temp"
-SAWTOOTH_OUT="${CURRENT_DIR}/src/lib/sawtooth-sdk-ts"
+SAWTOOTH_OUT="${CURRENT_DIR}/lib/sawtooth-sdk-ts"
 SAWTOOTH_PROTOS_URL="https://github.com/hyperledger/sawtooth-sdk-javascript.git"
 SAWTOOTH_PROTOS="./sawtooth-sdk-javascript/protos"
+
+if [ ! -e "${CURRENT_DIR}/lib/sawtooth-sdk-ts" ]; then
+    mkdir "${CURRENT_DIR}/lib/sawtooth-sdk-ts"
+fi
 
 protoc  \
     --plugin="protoc-gen-ts=${PROTOC_GEN_TS_PATH}" \

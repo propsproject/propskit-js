@@ -4,6 +4,7 @@
   "description": "Communicate with the pending props sidechain",
   "main": "dist/index.ts",
   "scripts": {
+    "protos": "./scripts/build_protos.sh $(pwd)",
     "test": "NODE_ENV=test mocha --timeout 60000 $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit || :",
     "oldtest": "NODE_ENV=test mocha --timeout 60000 $NODE_DEBUG_OPTION test/test.js --exit || :",
     "pretest": "rm -f /tmp/out.log && cd scripts && sh ./local-sawtooth.sh && cd ../",
@@ -52,9 +53,14 @@
     "wtfnode": "^0.7.0"
   },
   "devDependencies": {
+    "@types/google-protobuf": "^3.2.7",
     "@types/lodash": "^4.14.109",
     "@types/mocha": "^5.2.0",
+    "@types/moment": "^2.13.0",
     "@types/moment-timezone": "^0.5.5",
+    "@types/prettyjson": "^0.0.28",
+    "@types/superagent": "^3.8.5",
+    "@types/uuid": "^3.4.4",
     "commitizen": "^2.8.6",
     "copyfiles": "^2.0.0",
     "cz-conventional-changelog": "^1.2.0",
@@ -64,6 +70,7 @@
     "nodejs-dashboard": "latest",
     "nyc": "^10.0.0",
     "sinon": "^7.1.0",
+    "ts-protoc-gen": "^0.9.0",
     "tslint": "^4.5.1",
     "tslint-config-airbnb": "^1.1.1"
   },
