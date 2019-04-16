@@ -5,9 +5,7 @@ import { Logger } from '../../log/logger';
 import { Message } from '../../sawtooth-sdk-ts/validator_pb';
 
 export class Socket {
-  // tslint:disable-next-line:readonly-keyword
   public isConnected : boolean = false;
-  // tslint:disable-next-line:readonly-keyword
   public socket = zmq.socket('dealer');
 
   constructor(public validator : string, public onConnectHandle : any, public onDisconnectHandle : any, public onMessageHandle : any) {
@@ -15,7 +13,6 @@ export class Socket {
   }
 
   public setupSocket() : void {
-    // tslint:disable-next-line:no-object-mutation
     this.socket.identity = Buffer.from(uuid(), 'utf8');
 
     Logger.instance().info(`Setting up the socket to ${this.validator}`);
@@ -87,11 +84,8 @@ export class Socket {
 
   public onDisconnect() : void {
     Logger.instance().info(`Disconnected from ${this.validator}`);
-    // tslint:disable-next-line:no-object-mutation
     this.isConnected = false;
     this.onDisconnectHandle();
-
-    // this.setupSocket();
   }
 
   public encodeMessage(messageType : Message.MessageType, correlationId : string, content : Uint8Array) : Message {

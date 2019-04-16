@@ -1,7 +1,7 @@
 {
-  "name": "@younow/lib-pending-props",
-  "version": "3.1.0",
-  "description": "Communicate with the pending props sidechain",
+  "name": "@younow/lib-props-js",
+  "version": "1.0.0",
+  "description": "Library containing",
   "main": "dist/index.ts",
   "scripts": {
     "protos": "./scripts/build_protos.sh $(pwd)",

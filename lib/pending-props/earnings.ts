@@ -109,6 +109,7 @@ export class EarningsTransactor {
    * @param {string} recipient
    * @param {string} application
    * @param {number} amount
+   * @param {string} description
    * @returns {EarningDetails}
    * @memberof EarningsTransactor
    */
@@ -135,6 +136,7 @@ export class EarningsTransactor {
    * @param {string} application
    * @param {number} amount
    * @param {Secp256k1Signer} signer
+   * @param {string} description The description of the new earnings
    * @returns {Earning}
    * @memberof EarningsTransactor
    */
@@ -155,7 +157,11 @@ export class EarningsTransactor {
   /**
    *  Issue a new earning
    *
-   * @param {Earning} earning
+   * @param {string} recipient
+   * @param {string} application
+   * @param {number} amount
+   * @param {Secp256k1Signer} signer
+   * @param {string} description
    * @returns {*}
    * @memberof EarningsTransactor
    */
