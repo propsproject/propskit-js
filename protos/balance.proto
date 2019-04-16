@@ -1,0 +1,29 @@
+syntax = "proto3";
+package pending_props_pb;
+
+enum BalanceType {
+    USER = 0;
+    WALLET =1;
+}
+
+enum UpdateType {
+    PENDING_PROPS_BALANCE = 0;
+    PROPS_BALANCE = 1;
+}
+
+message BalanceDetails {
+    string pending = 1; // big.Int
+    string total_pending = 2; // big.Int
+    string total = 3; // big.Int
+    int64 timestamp = 4;
+    int64 last_eth_block_id = 5;
+    UpdateType last_update_type = 6;
+}
+
+message Balance {
+    string user_id = 1;
+    string application_id = 2;
+    BalanceDetails balance_details = 3;
+    BalanceDetails pre_cutoff_details = 4;
+    BalanceType type = 5;
+}
