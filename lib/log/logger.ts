@@ -9,7 +9,7 @@ export class Logger {
   static instance() : winston.Logger {
     if (this.log === null) {
 
-      const additionalArgs = winston.format(info => {
+      const additionalArgs = winston.format((info) => {
         info.app = process.env.APP_NAME;
         info.env = process.env.NODE_ENV;
         info.name = process.env.NAME;
@@ -24,8 +24,8 @@ export class Logger {
           winston.format.json()
         ),
         transports: [
-          new winston.transports.Console(config.console)
-        ]
+          new winston.transports.Console(config.console),
+        ],
       });
     }
 
