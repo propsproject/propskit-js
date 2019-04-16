@@ -1,9 +1,9 @@
 import * as request from 'superagent';
-import {RPCRequest} from '../generated/payload_pb';
-import {Batch, BatchHeader, BatchList} from '../sawtooth-sdk-ts/batch_pb';
-import {Transaction, TransactionHeader} from '../sawtooth-sdk-ts/transaction_pb';
-import {Config} from './config';
-import {QueryResults} from './serializer';
+import { RPCRequest } from '../proto/payload_pb';
+import { Batch, BatchHeader, BatchList } from '../sawtooth-sdk-ts/batch_pb';
+import { Transaction, TransactionHeader } from '../sawtooth-sdk-ts/transaction_pb';
+import { Config } from './config';
+import { QueryResults } from './serializer';
 
 /**
  *
@@ -69,7 +69,7 @@ export class RestClient {
     applicationJSON: 'application/json',
     applicationOctetStream: 'application/octet-stream',
     contentLength: 'Content-Length',
-    contentType: 'Content-Type'
+    contentType: 'Content-Type',
   };
 
   /**
@@ -143,7 +143,7 @@ export class RestClient {
         .get(this.endpoints.state)
         .ok(res => res.status < 300)
         .set(this.HEADERS.contentType, this.HEADERS.applicationJSON)
-        .query({address});
+        .query({ address });
       return new QueryResults(response.body);
     } catch (error) {
       throw error.response

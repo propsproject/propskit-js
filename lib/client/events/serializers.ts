@@ -1,5 +1,5 @@
-import {BalanceEvent, EarningEvent} from '../../proto/events_pb';
-import {Event} from '../../sawtooth-sdk-ts/events_pb';
+import { BalanceEvent, EarningEvent } from '../../proto/events_pb';
+import { Event } from '../../sawtooth-sdk-ts/events_pb';
 
 export class DecodedEarningEvent {
     /**
@@ -12,7 +12,7 @@ export class DecodedEarningEvent {
      * @param {ReadonlyArray < Event.Attribute >} attributes attributes of the earning event
      * @memberof DecodedEarningEvent
      */
-    constructor(readonly application : string, readonly recipient : string, readonly description : string, readonly earningEvent : EarningEvent, readonly eventType : string, readonly attributes : ReadonlyArray < Event.Attribute >) {}
+  constructor(readonly application : string, readonly recipient : string, readonly description : string, readonly earningEvent : EarningEvent, readonly eventType : string, readonly attributes : ReadonlyArray < Event.Attribute >) {}
 }
 
 /**
@@ -22,50 +22,28 @@ export class DecodedEarningEvent {
  * @returns {DecodedEarningEvent}
  */
 export const decodeEarningEvent = (e : Event) : DecodedEarningEvent => {
-    const obj = {
-        application: e
-            .getAttributesList()
-            .find(a => a.getKey() === 'application')
-            .getValue(),
-        attributes: e.getAttributesList(),
-        description: e
-        .getAttributesList()
-        .find(a => a.getKey() === 'description')
-        .getValue(),
-        earningEvent: EarningEvent.deserializeBinary(e.getData_asU8()),
-        eventType: e
-            .getAttributesList()
-            .find(a => a.getKey() === 'event_type')
-            .getValue(),
-        recipient: e
-            .getAttributesList()
-            .find(a => a.getKey() === 'recipient')
-            .getValue(),
-        
-    }
-    return Object.freeze(obj);
-    // return Object.freeze({
-    //     application: e
-    //         .getAttributesList()
-    //         .find(a => a.getKey() === 'application')
-    //         .getValue(),
-    //     attributes: e.getAttributesList(),
-    //     description: e
-    //     .getAttributesList()
-    //     .find(a => a.getKey() === 'description')
-    //     .getValue(),
-    //     earningEvent: EarningEvent.deserializeBinary(e.getData_asU8()),
-    //     eventType: e
-    //         .getAttributesList()
-    //         .find(a => a.getKey() === 'event_type')
-    //         .getValue(),
-    //     recipient: e
-    //         .getAttributesList()
-    //         .find(a => a.getKey() === 'recipient')
-    //         .getValue(),
-        
-    // });
-}
+  const obj = {
+    application: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'application')
+      .getValue(),
+    attributes: e.getAttributesList(),
+    description: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'description')
+      .getValue(),
+    earningEvent: EarningEvent.deserializeBinary(e.getData_asU8()),
+    eventType: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'event_type')
+      .getValue(),
+    recipient: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'recipient')
+      .getValue(),
+  };
+  return Object.freeze(obj);
+};
 
 /**
  *
@@ -83,7 +61,7 @@ export class DecodedBlockCommit {
      * @param {string} previousBlock
      * @memberof DecodedBlockCommit
      */
-    constructor(public blockID : string, public blockNum : number, public stateRootHash : string, public previousBlock : string) {}
+  constructor(public blockID : string, public blockNum : number, public stateRootHash : string, public previousBlock : string) {}
 }
 
 /**
@@ -93,16 +71,17 @@ export class DecodedBlockCommit {
  * @returns {DecodedEarningEvent}
  */
 export const decodeBlockCommit = (e : Event) : DecodedBlockCommit => {
-    const block = e
-        .getAttributesList()
-        .reduce((prev, curr) => {
-            // tslint:disable-next-line:no-object-mutation
-            prev[curr.getKey()] = curr.getValue();
-            return prev;
-        }, {})
-    // tslint:disable-next-line:no-string-literal
-    return new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
-}
+  const block = e
+    .getAttributesList()
+    .reduce((prev, curr) => {
+      // tslint:disable-next-line:no-object-mutation
+      prev[curr.getKey()] = curr.getValue();
+      return prev;
+    },      {});
+
+  // tslint:disable-next-line:no-string-literal
+  return new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
+};
 
 // tslint:disable-next-line:max-classes-per-file
 export class DecodedBalanceEvent {
@@ -113,7 +92,7 @@ export class DecodedBalanceEvent {
      * @param {ReadonlyArray < Event.Attribute >} attributes attributes of the balance event
      * @memberof DecodedBalanceEvent
      */
-    constructor(readonly recipient : string, readonly balanceEvent : BalanceEvent, readonly attributes : ReadonlyArray < Event.Attribute >) {}
+  constructor(readonly recipient : string, readonly balanceEvent : BalanceEvent, readonly attributes : ReadonlyArray < Event.Attribute >) {}
 }
 
 /**
@@ -123,16 +102,16 @@ export class DecodedBalanceEvent {
  * @returns {DecodedBalanceEvent}
  */
 export const decodeBalanceEvent = (e : Event) : DecodedBalanceEvent => {
-    return Object.freeze({        
-        attributes: e.getAttributesList(),
-        balanceEvent: BalanceEvent.deserializeBinary(e.getData_asU8()),
-        eventType: e
-            .getAttributesList()
-            .find(a => a.getKey() === 'event_type')
-            .getValue(),
-        recipient: e
-            .getAttributesList()
-            .find(a => a.getKey() === 'recipient')
-            .getValue()
-    });
-}
+  return Object.freeze({        
+    attributes: e.getAttributesList(),
+    balanceEvent: BalanceEvent.deserializeBinary(e.getData_asU8()),
+    eventType: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'event_type')
+      .getValue(),
+    recipient: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'recipient')
+      .getValue(),
+  });
+};

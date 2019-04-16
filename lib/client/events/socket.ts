@@ -1,11 +1,10 @@
-import {createHash} from 'crypto';
+import { createHash } from 'crypto';
 import uuid from 'uuid/v4';
 import * as zmq from 'zeromq';
 import { Logger } from '../../log/logger';
-import {Message} from '../../sawtooth-sdk-ts/validator_pb';
+import { Message } from '../../sawtooth-sdk-ts/validator_pb';
 
 export class Socket {
-
   // tslint:disable-next-line:readonly-keyword
   public isConnected : boolean = false;
   // tslint:disable-next-line:readonly-keyword
@@ -139,7 +138,7 @@ export class Socket {
   }
 
   public sendBack(messageType : Message.MessageType, correlationId : string, content : Uint8Array) : void {
-    if(this.isConnected) {
+    if (this.isConnected) {
       const message : Message = this.encodeMessage(messageType, correlationId, content);
       this
         .socket
@@ -148,7 +147,7 @@ export class Socket {
   }
 
   public send(messageType : Message.MessageType, content : Uint8Array) : void {
-    if(this.isConnected) {
+    if (this.isConnected) {
       const correlationId : string = this.generateId();
       try {
         const msg : Message = this.encodeMessage(messageType, correlationId, content);

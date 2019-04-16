@@ -1,4 +1,4 @@
-import {Earning, Settlements} from '../generated/earning_pb';
+import {Earning, Settlements} from '../proto/earning_pb';
 
 /**
  *  Wrapper class for state query responses that has deserialization utility methods

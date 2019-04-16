@@ -1,9 +1,9 @@
-import {AddressBuilder, Secp256k1Signer} from '../common';
-import {Earning} from '../generated/earning_pb';
-import {earningAddress, EarningsTransactor, getBalanceAddress, NamespacePrefixes, settlementAddress} from '../pending-props';
-import {Config} from './config';
-import {Subscriber} from './events';
-import {RestClient, TransactionData} from './rest';
+import { AddressBuilder, Secp256k1Signer } from '../common';
+import { Earning } from '../proto/earning_pb';
+import { earningAddress, EarningsTransactor, getBalanceAddress, NamespacePrefixes, settlementAddress } from '../pending-props';
+import { Config } from './config';
+import { Subscriber } from './events';
+import { RestClient, TransactionData } from './rest';
 
 /**
  *

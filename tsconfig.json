@@ -6,15 +6,10 @@
     "sourceMap": true,
     "allowJs": true,    
     "noImplicitAny": false,
+    "esModuleInterop": true,
     "moduleResolution": "node",
-    "types": [
-      "node",      
-      "mocha",
-      "chai",
-      "chai-as-promised",
-      "lodash",
-      "moment-timezone"
-    ]
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": [
     "./lib/**/*.ts"    
