@@ -19,7 +19,7 @@ export const EventTypes = {
  *
  *  * ### Example (es imports)
  * ```js
- *  import { propsclient } from 'propschain-js'
+ *  import { propsclient } from 'lib-props-js'
  *  const subscriber = new propsclient.Subscriber('tcp://localhost:4004');
  *  const onEvent = (e) => {
  *       console.log(e);

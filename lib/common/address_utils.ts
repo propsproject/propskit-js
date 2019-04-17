@@ -8,7 +8,7 @@ export interface AddressBuilderI {
    *
    *  * ### Example (es imports)
    * ```js
-   * import { utils } from 'propschain-js'
+   * import { utils } from 'lib-props-js'
    * const hash = utils.AddressBuilder('').hash('hello', 0, 4)
    * ```
    *
@@ -24,7 +24,7 @@ export interface AddressBuilderI {
    *
    *  * ### Example (es imports)
    * ```js
-   * import { utils } from 'propschain-js'
+   * import { utils } from 'lib-props-js'
    * const hash = utils.AddressBuilder('').stripPrefix('0xhello')
    * // => 'hello'
    * ```
@@ -42,8 +42,8 @@ export interface AddressBuilderI {
  *
  *  * ### Example (es imports)
  * ```js
- * import { utils } from 'propschain-js'
- * import { pendingprops } from 'propschain-js'
+ * import { utils } from 'lib-props-js'
+ * import { pendingprops } from 'lib-props-js'
  * const pendingEarningAddress = utils.AddressBuilder(pendingprops.NamespacePrefixes.pending())
  *      .addPart(recipientEthAddr, 0, 4)
  *      .addPart(applicationEthAddr, 0, 4)
