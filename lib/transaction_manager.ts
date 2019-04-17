@@ -36,15 +36,22 @@ interface BatchDetailsTransaction {
   stateAddress: string;
 }
 
-interface WalletBalance {
+interface IBalance {
   pending: string; // bigNumber
-  totalPending: string //bigNumber
-  total: string; // bigNumber
-  timestamp: number;
-  wallet: string;
+  totalPending: string; //bigNumber
+  transferable: string; //bigNumber
+  bonded: string; //bigNumber
+  delegated: string; //bigNumber
+  delegatedTo: string; //address
+  total: string; // bigNumber = APP Power = totalPending + transferable + delegated
+  timestamp: number;  
   linkedWallet: string;
   lastUpdateType: number;
   type: number;
+}
+
+interface WalletBalance extends IBalance {  
+  wallet: string;  
 }
 
 interface ApplicationUser {
@@ -52,16 +59,9 @@ interface ApplicationUser {
   applicationId: string;
 }
 
-interface AppUserBalance {
-  pending: string; // bigNumber
-  totalPending: string; //bigNumber
-  total: string; // bigNumber
-  timestamp: number;
+interface AppUserBalance extends IBalance {
   applicationId: string;
-  userId: string;
-  linkedWallet: string;
-  lastUpdateType: number;
-  type: number;
+  userId: string;  
 }
 
 interface BalanceUpdate {
@@ -261,6 +261,13 @@ class TransactionManager {
     }
   }
 
+  calcTotalAppPower(balance: IBalance): string { // bigNumber
+    const totalPending = new BigNumber(balance.totalPending, 10);
+    const transferable = new BigNumber(balance.transferable, 10);
+    const delegated = new BigNumber(balance.delegated, 10);
+    return totalPending.plus(transferable).plus(delegated).toString();
+  }
+
   async getBalanceByAppUser(applicationId: string, userId: string): Promise<AppUserBalance> {    
     const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
     const options = {
@@ -281,7 +288,11 @@ class TransactionManager {
         appUserBalance = {
           pending: balance.getBalanceDetails().getPending(),
           totalPending: balance.getBalanceDetails().getTotalPending(),
-          total: balance.getBalanceDetails().getTotal(),
+          transferable: balance.getBalanceDetails().getTransferable(),
+          bonded: balance.getBalanceDetails().getBonded(),
+          delegated: balance.getBalanceDetails().getDelegated(),
+          delegatedTo: balance.getBalanceDetails().getDelegatedto(),
+          total: '0',
           timestamp: TransactionManager.normalizeTimestamp(balance.getBalanceDetails().getTimestamp()),
           applicationId: balance.getApplicationId(),
           userId: balance.getUserId(),
@@ -290,6 +301,11 @@ class TransactionManager {
           type: balance.getType(),
         };
       });
+
+      if (appUserBalance != null) {
+        appUserBalance.total = this.calcTotalAppPower(appUserBalance);
+      }
+      
 
       return appUserBalance;
     } catch (error) {
@@ -301,11 +317,15 @@ class TransactionManager {
     const appUserBalance: AppUserBalance = await this.getBalanceByAppUser('', TransactionManager.normalizeAddress(wallet));
     
     const walletBalance: WalletBalance = {
+      wallet: appUserBalance.userId,
       pending: appUserBalance.pending,
       totalPending: appUserBalance.totalPending,
+      transferable: appUserBalance.transferable,
+      bonded: appUserBalance.bonded,
+      delegated: appUserBalance.delegated,
+      delegatedTo: appUserBalance.delegatedTo,
       total: appUserBalance.total,
-      timestamp: appUserBalance.timestamp,
-      wallet: appUserBalance.userId,
+      timestamp: appUserBalance.timestamp,      
       linkedWallet: appUserBalance.linkedWallet,
       lastUpdateType: appUserBalance.lastUpdateType,
       type: appUserBalance.type,

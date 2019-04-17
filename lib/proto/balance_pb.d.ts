@@ -10,8 +10,17 @@ export class BalanceDetails extends jspb.Message {
   getTotalPending(): string;
   setTotalPending(value: string): void;
 
-  getTotal(): string;
-  setTotal(value: string): void;
+  getTransferable(): string;
+  setTransferable(value: string): void;
+
+  getBonded(): string;
+  setBonded(value: string): void;
+
+  getDelegated(): string;
+  setDelegated(value: string): void;
+
+  getDelegatedto(): string;
+  setDelegatedto(value: string): void;
 
   getTimestamp(): number;
   setTimestamp(value: number): void;
@@ -36,7 +45,10 @@ export namespace BalanceDetails {
   export type AsObject = {
     pending: string,
     totalPending: string,
-    total: string,
+    transferable: string,
+    bonded: string,
+    delegated: string,
+    delegatedto: string,
     timestamp: number,
     lastEthBlockId: number,
     lastUpdateType: UpdateType,
