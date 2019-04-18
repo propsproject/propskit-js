@@ -1,6 +1,6 @@
 {
   "name": "@younow/lib-props-js",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Library containing classes to work with the sidechain",
   "main": "dist/index.js",
   "scripts": {
@@ -49,7 +49,7 @@
     "ts-node": "^6.0.5",
     "typescript": "^2.8.3",
     "uuid": "^3.3.2",
-    "web3": "^1.0.0-beta.52",
+    "web3": "1.0.0-beta.35",
     "winston": "^3.2.1",
     "wtfnode": "^0.7.0",
     "zeromq": "^5.1.0"
