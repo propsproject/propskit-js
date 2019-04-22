@@ -2,6 +2,7 @@ syntax = "proto3";
 package pending_props_pb;
 import "earning.proto";
 import "balance.proto";
+import "users.proto";
 
 enum EventType {
     EarningIssued = 0;
@@ -9,6 +10,8 @@ enum EventType {
     EarningSettled = 2;
     BalanceUpdated = 3;
     LastEthBlockUpdated = 4;
+    WalletLinked = 5;
+    WalletUnlinked = 6;
 }
 
 message EarningEvent {
@@ -29,4 +32,16 @@ message BalanceEvent {
 message LastEthBlockEvent {
     int64 blockId = 1;
     string message = 2;
+}
+
+message WalletLinkedEvent {
+    ApplicationUser user = 1;
+    WalletToUser walletToUsers = 2;
+    string message = 3;
+}
+
+message WalletUnlinkedEvent {
+    ApplicationUser user = 1;
+    WalletToUser walletToUsers = 2;
+    string message = 3;
 }

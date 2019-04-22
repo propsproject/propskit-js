@@ -14,7 +14,7 @@ EARNING_PROTO="${PROTOS_PATH}/earning.proto"
 BALANCE_PROTO="${PROTOS_PATH}/balance.proto"
 EVENTS_PROTO="${PROTOS_PATH}/events.proto"
 PAYLOAD_PROTO="${PROTOS_PATH}/payload.proto"
-PROTO_PB_OUT="${CURRENT_DIR}/src/lib/generated"
+PROTO_PB_OUT="${CURRENT_DIR}/lib/proto"
 
 TEMP_DIR="${CURRENT_DIR}/temp"
 SAWTOOTH_OUT="${CURRENT_DIR}/lib/sawtooth-sdk-ts"
