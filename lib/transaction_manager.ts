@@ -802,8 +802,10 @@ class TransactionManager {
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
     if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
+      const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
       const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
       stateAddresses.push(walletLinkAddress);
+      stateAddresses.push(walletBalanceAddress);
       const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== issueEarningsDetailsPB.getApplicationId() || applicationUsers[i].userId !== issueEarningsDetailsPB.getUserId()) {

@@ -7,20 +7,15 @@ const chaiAsPromised = require('chai-as-promised');
 const waitUntil = require('async-wait-until');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
-const Web3 = require('web3');
-const web3 = new Web3();
 const BigNumber = require('bignumber.js');
 BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
 
-function add(accumulator, a) {
-  return accumulator + a;
-}
 
 let startTime = Math.floor(Date.now() / 1000);
 const amounts = [125, 50.5];
 const descriptions = ['Broadcasting', 'Watching'];
 const waitTimeUntilOnChain = 750; // miliseconds
-const longerTestWaitMultiplier = 4;
+const longerTestWaitMultiplier = 5;
 
 // data about the ethereum transactions we're testing with
 const walletAddress =  '0x2d4dcf292bc5bd8d7246099052dfc76b3cdd3524';
@@ -41,7 +36,7 @@ const lastEthBlockId2 = 3968211;
 
 const options = {
   familyName: 'pending-earnings',
-  familyVersion: '1.0',    
+  familyVersion: '1.0',
   host: '127.0.0.1',
   port: 8008,
 };
@@ -50,10 +45,10 @@ const earningAddresses: string[] = [];
 const issueTimestamp: number = Math.floor(Date.now() / 1000);
 
 describe('Transaction Manager interacting with Sawtooth side chain tests', async () => {
-  before(async () => {        
+  before(async () => {
     console.log(`will wait for sawtooth to be ready...`);
     let REGEX = /Now building on top of block.*/g;
-        // const
+    // const
     await waitUntil(() => {
       console.log(`still waiting ${ Math.floor(Date.now() / 1000) - startTime}...`);
       const fileContents = fs.readFileSync('/tmp/out.log', 'utf8');
@@ -64,8 +59,8 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
         return false;
       }
     },              90000, 1000);
-        // wait 5 mote seconds to make sure everything is ready to go
-        // execute tp now that sawtooth is ready
+    // wait 5 mote seconds to make sure everything is ready to go
+    // execute tp now that sawtooth is ready
     const workingDir = process.cwd();
     console.log(`will wait for tp to be ready... executing: cd $GOPATH/src/github.com/propsproject/pending-props && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd ${workingDir}`);
     exec(`cd $GOPATH/src/github.com/propsproject/pending-props && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd ${workingDir}`, (err, stdout, stderr) => {
@@ -74,11 +69,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
         return;
       }
 
-            // the *entire* stdout and stderr (buffered)
+      // the *entire* stdout and stderr (buffered)
       console.log(`stdout: ${stdout}`);
       console.log(`stderr: ${stderr}`);
     });
-        // execSync('cd ../ && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd dev-cli');
+    // execSync('cd ../ && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd dev-cli');
     REGEX = /registered transaction processor.*pending/g;
     startTime = Math.floor(Date.now() / 1000);
     await waitUntil(() => {
@@ -99,46 +94,46 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     },              10000, 1000);
   });
 
-  it('Successfully issue an earning', async() => {    
+  it('Successfully issue an earning', async() => {
     const app = 'app1';
     const user = 'user1';
     const issuePayload: IssuePayload = {
       userId: user,
       applicationId: app,
-      amount: amounts[0], 
+      amount: amounts[0],
       description: descriptions[0],
     };
-    
-        // issue
+
+    // issue
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitIssueTransaction(pkSawtooth, [issuePayload], issueTimestamp);
-    expect(res).to.be.equal(true);    
+    expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
     const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp);
     earningAddresses.push(earningAddress);
-    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');    
-    // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);    
+    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');
+    // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
-    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);    
+    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
     const earningPropsAmount = new BigNumber(earningOnChain.amountEarned, 10);
     const balancePendingAmount = new BigNumber(balanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(balanceOnChain.totalPending, 10);
     const balanceTotalAmount = new BigNumber(balanceOnChain.total, 10);
 
-        // expect earning details to be correct
+    // expect earning details to be correct
     expect(earningPropsAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(earningOnChain.userId).to.be.equal(user);
     expect(earningOnChain.applicationId).to.be.equal(app);
     expect(earningOnChain.description).to.be.equal(descriptions[0]);
     expect(earningOnChain.status).to.be.equal(0);
 
-        // expect balance details to be correct
+    // expect balance details to be correct
     expect(balancePendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(balanceTotalAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
@@ -149,34 +144,34 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceOnChain.linkedWallet).to.be.equal('');
   });
 
-  
+
   it('Successfully revoke one earning', async() => {
     const app = 'app1';
     const user = 'user1';
     const issuePayload: IssuePayload = {
       userId: user,
       applicationId: app,
-      amount: amounts[0], 
+      amount: amounts[0],
       description: descriptions[0],
-    };    
+    };
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitRevokeTransaction(pkSawtooth, [earningAddresses[0]], app, user);
-    expect(res).to.be.equal(true);    
+    expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
     const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp);
     const revokeAddress = tm.issueStateAddressToRevokeStateAddress(earningAddress);
-    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');    
+    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');
     // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);
-    const revokeOnChain = await tm.addressLookup(revokeAddress, 'EARNING');    
-    // console.log(`revokeOnChain=${JSON.stringify(revokeOnChain)}`);    
+    const revokeOnChain = await tm.addressLookup(revokeAddress, 'EARNING');
+    // console.log(`revokeOnChain=${JSON.stringify(revokeOnChain)}`);
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
-    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);    
+    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
     const revokedPropsAmount = new BigNumber(revokeOnChain.amountEarned, 10);
     const balancePendingAmount = new BigNumber(balanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(balanceOnChain.totalPending, 10);
@@ -200,7 +195,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceOnChain.applicationId).to.be.equal(app);
     expect(balanceOnChain.lastUpdateType).to.be.equal(0);
     expect(balanceOnChain.type).to.be.equal(0);
-    expect(balanceOnChain.linkedWallet).to.be.equal('');    
+    expect(balanceOnChain.linkedWallet).to.be.equal('');
   });
 
 
@@ -209,22 +204,22 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const res:boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock, txHash, blockNum, timestamp);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > (waitTimeUntilOnChain*longerTestWaitMultiplier));
     },              10000, 100);
-    
+
     const balanceOnChain:WalletBalance = await tm.getBalanceByWallet(walletAddress);
     // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
-    
+
     // expect balance details to be correct
     expect(balanceOnChain.pending).to.be.equal('0');
     expect(balanceOnChain.totalPending).to.be.equal('0');
     expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock);
     expect(balanceOnChain.total).to.be.equal(balanceAtBlock);
-    expect(balanceOnChain.wallet).to.be.equal(walletAddress);    
+    expect(balanceOnChain.wallet).to.be.equal(walletAddress);
     expect(balanceOnChain.lastUpdateType).to.be.equal(1);
     expect(balanceOnChain.type).to.be.equal(1);
     expect(balanceOnChain.linkedWallet).to.be.equal('');
@@ -238,19 +233,19 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletAddress, app, user, sig);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
 
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
-    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);        
+    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
     const balancePendingAmount = new BigNumber(balanceOnChain.pending, 10);
-    const balanceTotalPendingAmount = new BigNumber(balanceOnChain.totalPending, 10);    
-    const balanceTotalAmount = balanceOnChain.total;    
-    
+    const balanceTotalPendingAmount = new BigNumber(balanceOnChain.totalPending, 10);
+    const balanceTotalAmount = balanceOnChain.total;
+
     // expect for link to be properly on chain
     const walletLinkAddress = tm.getWalletLinkAddress(walletAddress);
     const walletLinkOnChain = await tm.addressLookup(walletLinkAddress, 'WALLETLINK');
@@ -266,7 +261,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal('0');
     expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock);
     expect(balanceTotalAmount).to.be.equal(balanceAtBlock);
-    expect(balanceOnChain.linkedWallet).to.be.equal(walletAddress);    
+    expect(balanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
 
   it('Successfully update last eth block Id', async() => {
@@ -274,10 +269,10 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const res: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
     const lastEthBlockAddress = tm.getLastEthBlockStateAddress();
@@ -294,13 +289,13 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const issuePayload: IssuePayload = {
       userId: user,
       applicationId: app,
-      amount: amounts[0], 
+      amount: amounts[0],
       description: descriptions[0],
-    };    
+    };
     const issueTimestamp2 = Math.floor(Date.now() / 1000);
     const tm:TransactionManager = new TransactionManager(options);
     tm.setAccumulateTransactions(true);
-    const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [issuePayload], issueTimestamp2);    
+    const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [issuePayload], issueTimestamp2);
     const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2);
     const res3: boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock2, txHash2, blockNum2, timestamp2);
     expect(res1).to.be.equal(true);
@@ -309,11 +304,11 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const res: boolean = await tm.commitTransactions(pkSawtooth);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
-        // wait a bit for it to be on chain
+    // wait a bit for it to be on chain
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
-    //   console.log(`waiting for transaction ${ Math.floor(Date.now()) - timeOfStart}...`);
-      return (timePassed > (waitTimeUntilOnChain * longerTestWaitMultiplier * 30));
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now()) - timeOfStart}...`);
+      return (timePassed > (waitTimeUntilOnChain * longerTestWaitMultiplier));
     },              10000, 100);
     const lastEthBlockAddress = tm.getLastEthBlockStateAddress();
     const ethBlockOnChain = await tm.addressLookup(lastEthBlockAddress, 'LASTETHBLOCK');
@@ -325,33 +320,34 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const expectedBalanceTotal = new BigNumber(balanceAtBlock2, 10);
 
     // expect balance details to be correct
+    const balanceOnChainTotalPending = new BigNumber(balanceOnChain.totalPending, 10);
     expect(balanceOnChain.pending).to.be.equal('0');
-    expect(balanceOnChain.totalPending).to.be.equal(amounts[0].toString());
-    expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock2);    
-    expect(balanceOnChain.wallet).to.be.equal(walletAddress);    
+    expect(balanceOnChainTotalPending.div(1e18).toString()).to.be.equal(amounts[0].toString());
+    expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock2);
+    expect(balanceOnChain.wallet).to.be.equal(walletAddress);
     expect(balanceOnChain.lastUpdateType).to.be.equal(1);
     expect(balanceOnChain.type).to.be.equal(1);
     expect(balanceOnChain.linkedWallet).to.be.equal('');
 
-    const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp2);    
-    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');    
-    // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);    
+    const earningAddress = tm.getIssueStateAddress(pkSawtooth, issuePayload, issueTimestamp2);
+    const earningOnChain = await tm.addressLookup(earningAddress, 'EARNING');
+    // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);
     const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
-    // console.log(`userBalanceOnChain=${JSON.stringify(userBalanceOnChain)}`);    
+    // console.log(`userBalanceOnChain=${JSON.stringify(userBalanceOnChain)}`);
     const earningPropsAmount = new BigNumber(earningOnChain.amountEarned, 10);
     const balancePendingAmount = new BigNumber(userBalanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(userBalanceOnChain.totalPending, 10);
     const balanceTotalAmount = new BigNumber(userBalanceOnChain.total, 10);
 
-        // expect earning details to be correct
+    // expect earning details to be correct
     expect(earningPropsAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(earningOnChain.userId).to.be.equal(user);
     expect(earningOnChain.applicationId).to.be.equal(app);
     expect(earningOnChain.description).to.be.equal(descriptions[0]);
     expect(earningOnChain.status).to.be.equal(0);
 
-        // expect balance details to be correct
-    
+    // expect balance details to be correct
+
     expect(balancePendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
     expect(balanceTotalAmount.toString()).to.be.equal(earningPropsAmount.plus(expectedBalanceTotal).toString());
@@ -658,7 +654,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 //     expect(balanceTotalAmount2.toString()).to.be.equal(expectedTotalAmount.toString());
 //   });
 
-    // TODO - add more tests for error scenarios such as replaying the same transaction, last eth block smaller than current, bad signatures, etc.
+  // TODO - add more tests for error scenarios such as replaying the same transaction, last eth block smaller than current, bad signatures, etc.
 
   after(async () => {
 
