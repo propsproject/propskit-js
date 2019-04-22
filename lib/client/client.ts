@@ -1,6 +1,6 @@
 import { AddressBuilder, Secp256k1Signer } from '../common';
 import { Earning } from '../proto/earning_pb';
-import { earningAddress, EarningsTransactor, getBalanceAddress, NamespacePrefixes, settlementAddress } from '../pending-props';
+import { earningAddress, EarningsTransactor, getBalanceAddress, NamespacePrefixes, settlementAddress } from '../transaction_manager';
 import { Config } from './config';
 import { Subscriber } from './events';
 import { RestClient, TransactionData } from './rest';

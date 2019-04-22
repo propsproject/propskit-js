@@ -38,11 +38,11 @@ interface BatchDetailsTransaction {
 
 interface IBalance {
   pending: string; // bigNumber
-  totalPending: string; //bigNumber
-  transferable: string; //bigNumber
-  bonded: string; //bigNumber
-  delegated: string; //bigNumber
-  delegatedTo: string; //address
+  totalPending: string; // bigNumber
+  transferable: string; // bigNumber
+  bonded: string; // bigNumber
+  delegated: string; // bigNumber
+  delegatedTo: string; // address
   total: string; // bigNumber = APP Power = totalPending + transferable + delegated
   timestamp: number;  
   linkedWallet: string;
@@ -163,7 +163,7 @@ class TransactionManager {
       if (str.substr(0,2) === '0x') {
         return str.toLowerCase();
       } else {
-        return `0x${str.toLowerCase()}`
+        return `0x${str.toLowerCase()}`;
       }
     }
     return str;
