@@ -1,6 +1,6 @@
 {
   "name": "@younow/lib-props-js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Library containing classes to work with the sidechain",
   "main": "dist/index.js",
   "scripts": {

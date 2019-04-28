@@ -8,7 +8,6 @@ import * as utils from './common';
 class Props {
   static Subscriber = propsclient.Subscriber;
   static Config = propsclient.Config;
-  static Client = propsclient.Client;
   static Signer = utils.Secp256k1Signer;
   static AddressBuilder = utils.AddressBuilder;
 }
