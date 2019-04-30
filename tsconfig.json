@@ -4,7 +4,8 @@
     "module": "commonjs",
     "outDir": "dist",
     "sourceMap": true,
-    "allowJs": true,    
+    "allowJs": false,
+    "declaration": true,
     "noImplicitAny": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -12,10 +13,10 @@
     "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": [
-    "./lib/**/*.ts"    
+    "./lib/**/*.ts"
   ],
   "exclude": [
-    "node_modules",    
+    "node_modules",
     "lib/**/*.test.ts"
   ]
 }
