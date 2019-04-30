@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { Logger } from '../../log/logger';
 import { ClientEventsSubscribeRequest, ClientEventsUnsubscribeRequest } from '../../sawtooth-sdk-ts/client_event_pb';
 import { EventList } from '../../sawtooth-sdk-ts/events_pb';
