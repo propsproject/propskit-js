@@ -44,14 +44,14 @@ interface IBalance {
   delegated: string; // bigNumber
   delegatedTo: string; // address
   total: string; // bigNumber = APP Power = totalPending + transferable + delegated
-  timestamp: number;  
+  timestamp: number;
   linkedWallet: string;
   lastUpdateType: number;
   type: number;
 }
 
-interface WalletBalance extends IBalance {  
-  wallet: string;  
+interface WalletBalance extends IBalance {
+  wallet: string;
 }
 
 interface ApplicationUser {
@@ -61,15 +61,15 @@ interface ApplicationUser {
 
 interface AppUserBalance extends IBalance {
   applicationId: string;
-  userId: string;  
+  userId: string;
 }
 
 interface BalanceUpdate {
   address: string;
-  balance: string;  
+  balance: string;
   txHash: string;
   blockId: number;
-  timestamp: number;  
+  timestamp: number;
 }
 
 interface TransactionManagerOptions {
@@ -109,11 +109,15 @@ class TransactionManager {
 
     return instance;
   }
- 
+
   constructor(options: TransactionManagerOptions) {
     this.familyName = options.familyName;
     this.familyVersion = options.familyVersion;
-    this.https = !_.isUndefined(options.https);
+    if (_.isUndefined(options.https) || options.https === false) {
+      this.https = false;
+    } else {
+      this.https = true;
+    }
     this.host = _.isUndefined(options.host) ? '127.0.0.1' : options.host;
     this.port = _.isUndefined(options.port) ? 8008 : options.port;
 
@@ -123,7 +127,7 @@ class TransactionManager {
       revoked: createHash('sha512').update('pending-props:earnings:revoked').digest('hex').substring(0, 6),
       settled: createHash('sha512').update('pending-props:earnings:settled').digest('hex').substring(0, 6),
       settlements: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
-      balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),      
+      balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),
       balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
       walletLink: createHash('sha512').update('pending-props:earnings:walletl').digest('hex').substring(0, 6),
@@ -175,7 +179,7 @@ class TransactionManager {
     }
     return timestamp;
   }
-  
+
   // static normalizeWalletAddress(walletAddress: string): string {
   //   const strippedWalletAddress = walletAddress.substr(0,2) === '0x' ? walletAddress.substr(2) : walletAddress;
   //   return _.toUpper(strippedWalletAddress);
@@ -195,12 +199,11 @@ class TransactionManager {
   static async signMessage(msg: string, address: string, pk: string) {
     const privateKey = pk;
     const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
-    web3.eth.accounts.wallet.add(account);
-    web3.eth.defaultAccount = account.address;
-    return web3.eth.sign(msg, address);
+    const signed = account.sign(msg);
+    return signed.signature;
   }
 
-  static async recoverFromSignature(msg: string, sig: string) {    
+  static async recoverFromSignature(msg: string, sig: string) {
     return web3.eth.accounts.recover(msg, sig);
   }
 
@@ -213,7 +216,7 @@ class TransactionManager {
     };
 
     try {
-      const res = JSON.parse(await rp(options));    
+      const res = JSON.parse(await rp(options));
       const data = res.data;
       let blockId = null;
 
@@ -221,7 +224,7 @@ class TransactionManager {
         const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
         // const balance: Balance = new balance_pb.Balance.deserializeBinary(bytes);
         const block: LastEthBlock = new earnings_pb.LastEthBlock.deserializeBinary(bytes);
-        blockId = block.getId();        
+        blockId = block.getId();
       });
 
       return blockId;
@@ -230,7 +233,7 @@ class TransactionManager {
     }
   }
 
-  async getLinkedWalletApplicationUsers(walletLinkAddress: string): Promise<ApplicationUser[]> {        
+  async getLinkedWalletApplicationUsers(walletLinkAddress: string): Promise<ApplicationUser[]> {
     const options = {
       method: 'GET',
       uri: this.stateAddressUrl(walletLinkAddress),
@@ -238,7 +241,7 @@ class TransactionManager {
     };
 
     try {
-      const res = JSON.parse(await rp(options));    
+      const res = JSON.parse(await rp(options));
       const data = res.data;
       const applicationUsers: ApplicationUser[] = [];
 
@@ -252,12 +255,21 @@ class TransactionManager {
             applicationId: walletToUserList[i].getApplicationId(),
           };
           applicationUsers.push(appUser);
-        }        
+        }
       });
 
       return applicationUsers;
     } catch (error) {
       throw error;
+    }
+  }
+
+  static isValidSignature(signature: string): boolean {
+    try {
+      const rpc = ethUtil.fromRpcSig(signature);
+      return ethUtil.isValidSignature(rpc.v, rpc.r, rpc.s);
+    } catch (err) {
+      return false;
     }
   }
 
@@ -268,7 +280,7 @@ class TransactionManager {
     return totalPending.plus(transferable).plus(delegated).toString();
   }
 
-  async getBalanceByAppUser(applicationId: string, userId: string): Promise<AppUserBalance> {    
+  async getBalanceByAppUser(applicationId: string, userId: string): Promise<AppUserBalance> {
     const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
     const options = {
       method: 'GET',
@@ -277,7 +289,7 @@ class TransactionManager {
     };
 
     try {
-      const res = JSON.parse(await rp(options));    
+      const res = JSON.parse(await rp(options));
       const data = res.data;
       let appUserBalance: AppUserBalance = null;
 
@@ -305,7 +317,7 @@ class TransactionManager {
       if (appUserBalance != null) {
         appUserBalance.total = this.calcTotalAppPower(appUserBalance);
       }
-      
+
 
       return appUserBalance;
     } catch (error) {
@@ -315,7 +327,7 @@ class TransactionManager {
 
   async getBalanceByWallet(wallet: string): Promise<WalletBalance> {
     const appUserBalance: AppUserBalance = await this.getBalanceByAppUser('', TransactionManager.normalizeAddress(wallet));
-    
+
     const walletBalance: WalletBalance = {
       wallet: appUserBalance.userId,
       pending: appUserBalance.pending,
@@ -325,20 +337,20 @@ class TransactionManager {
       delegated: appUserBalance.delegated,
       delegatedTo: appUserBalance.delegatedTo,
       total: appUserBalance.total,
-      timestamp: appUserBalance.timestamp,      
+      timestamp: appUserBalance.timestamp,
       linkedWallet: appUserBalance.linkedWallet,
       lastUpdateType: appUserBalance.lastUpdateType,
       type: appUserBalance.type,
     };
-    return walletBalance;    
+    return walletBalance;
   }
 
-  public async submitRevokeTransaction(privateKey, stateAddresses:string[], applicationId: string, userId: string):Promise<boolean> {    
+  public async submitRevokeTransaction(privateKey, stateAddresses:string[], applicationId: string, userId: string):Promise<boolean> {
     const transactions = [];
     const authAddresses = [];
     const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
     authAddresses.push(balanceAddress);
-    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
+    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(applicationId, userId);
     if (appUserBalance.linkedWallet.length > 0) {
       const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
@@ -368,14 +380,14 @@ class TransactionManager {
   }
 
   public async submitBalanceUpdateTransaction(privateKey, _address: string, _addressBalance: string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
-    const address = TransactionManager.normalizeAddress(_address);    
+    const address = TransactionManager.normalizeAddress(_address);
     const normalizedTxHash = TransactionManager.normalizeAddress(txHash);
     const transactions = [];
-    const balanceAddress: string = this.getBalanceStateAddress('', address);    
+    const balanceAddress: string = this.getBalanceStateAddress('', address);
     const balanceUpdateAddress: string = this.getBalanceUpdateAddress(normalizedTxHash, address);
     const balanceUpdateData: BalanceUpdate = {
       address,
-      balance: _addressBalance,      
+      balance: _addressBalance,
       txHash: normalizedTxHash,
       blockId,
       timestamp: TransactionManager.normalizeTimestamp(timestamp),
@@ -394,11 +406,11 @@ class TransactionManager {
     }
     if (applicationUsers.length > 0) {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
-        authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));        
+        authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
       }
     }
-    
-    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,authAddresses));    
+
+    transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,authAddresses));
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -412,7 +424,7 @@ class TransactionManager {
     this.requestTimestamp = TransactionManager.normalizeTimestamp(timestamp);
     const transactions = [];
 
-    for (let i = 0; i < issuePayloads.length; i += 1) {  
+    for (let i = 0; i < issuePayloads.length; i += 1) {
       transactions.push(await this.getIssueTransaction(privateKey, this.getIssueEarningDetailsPB(privateKey, issuePayloads[i])));
     }
 
@@ -487,9 +499,9 @@ class TransactionManager {
       return JSON.parse(resStr);
     } catch (error) {
       throw error;
-    }    
+    }
   }
-  
+
   private async makeAddressAPIRequest(stateAddress: string, type: string): Promise<boolean> {
     const options = {
       method: 'GET',
@@ -516,19 +528,19 @@ class TransactionManager {
           case 'BALANCE':
             dataObject = new balance_pb.Balance.deserializeBinary(bytes);
             ret = (dataObject.toObject());
-            break;  
+            break;
           case 'WALLETLINK':
             dataObject = new users_pb.WalletToUser.deserializeBinary(bytes);
             ret = (dataObject.toObject());
-            break;  
-        }         
+            break;
+        }
       });
 
       this.lastStateData = ret;
       return true;
     } catch (error) {
       throw error;
-    }    
+    }
   }
 
   private async makeStatusAPIRequest(batchUri: string): Promise<boolean> {
@@ -544,7 +556,7 @@ class TransactionManager {
       return true;
     } catch (error) {
       throw error;
-    }    
+    }
   }
 
   private async makeSubmitAPIRequest(batch): Promise<boolean> {
@@ -560,13 +572,13 @@ class TransactionManager {
     };
 
     try {
-      const res = JSON.parse(await rp(options));    
-      const resLinkSplit = res.link.split('=');  
+      const res = JSON.parse(await rp(options));
+      const resLinkSplit = res.link.split('=');
       this.lastSubmitResponse = { batchStatusUri: res.link, batchId: resLinkSplit[1] };
       return true;
     } catch (error) {
       throw error;
-    }    
+    }
   }
 
   private getBatch(privateKey, transactions) {
@@ -606,7 +618,7 @@ class TransactionManager {
 
   public getBalanceUpdateAddress(txHash: string, address: string): string {
     const normalizedTxHash: string = TransactionManager.normalizeAddress(txHash);
-    const prefix: string = this.prefixes['balanceUpdate'];    
+    const prefix: string = this.prefixes['balanceUpdate'];
     const body: string = createHash('sha512').update(`${normalizedTxHash}`).digest('hex').toLowerCase().substring(0,40);
     const postfix: string = createHash('sha512').update(`${address}`).digest('hex').toLowerCase().substring(0,24);
 
@@ -615,20 +627,20 @@ class TransactionManager {
 
   public getWalletLinkAddress(address: string): string {
     const normalizedAddress: string = TransactionManager.normalizeAddress(address);
-    const prefix: string = this.prefixes['walletLink'];    
-    const body: string = createHash('sha512').update(`${normalizedAddress}`).digest('hex').toLowerCase().substring(0,64);    
+    const prefix: string = this.prefixes['walletLink'];
+    const body: string = createHash('sha512').update(`${normalizedAddress}`).digest('hex').toLowerCase().substring(0,64);
     return `${prefix}${body}`;
   }
 
   public getLastEthBlockStateAddress(): string {
-    const prefix: string = this.prefixes['blockIdUpdate'];    
+    const prefix: string = this.prefixes['blockIdUpdate'];
     const postfix: string = createHash('sha512').update('LastEthBlockAddress').digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
   }
-  
+
   private getRPCRequest(params, method) {
-    const reqParams = new payloads_pb.Params();    
+    const reqParams = new payloads_pb.Params();
     reqParams.setData(params);
 
     const payload = new payloads_pb.RPCRequest();
@@ -643,13 +655,13 @@ class TransactionManager {
     details.setTimestamp(TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : (timestamp > 0 ? timestamp : this.requestTimestamp)));
     details.setUserId(payload.userId);
     details.setApplicationId(payload.applicationId);
-    details.setDescription(payload.description);    
+    details.setDescription(payload.description);
     BigNumber.set({ EXPONENTIAL_AT: 1e+9 });
     const propsAmount = new BigNumber(payload.amount, 10);
     const tokensAmount = propsAmount.times(1e18);
     const zero = new BigNumber(0, 10);
     details.setAmountEarned(tokensAmount.toString());
-    details.setAmountSettled(zero.toString());    
+    details.setAmountSettled(zero.toString());
 
     return details;
   }
@@ -660,15 +672,15 @@ class TransactionManager {
 
   public getIssueStateAddress(privateKey, payload: IssuePayload, timestamp: number): string {
     const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, payload, TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : timestamp));
-    const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
-    const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));    
+    const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
+    const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
     const addressArgs = [
       { data: issueEarningsDetailsPB.getApplicationId(), start: 0, end: 4 },
       { data: issueEarningsDetailsPB.getUserId(), start: 0, end: 4 },
       { data: `${issueEarningsDetailsPB.getApplicationId()}${issueEarningsDetailsPB.getUserId()}${earningsSignature}`, start: 0, end: 56 },
     ];
 
-    return this.getEarningStateAddress('pending', addressArgs);    
+    return this.getEarningStateAddress('pending', addressArgs);
   }
 
   public getSettleStateAddress(privateKey, payload: SettlePayload, timestamp: number): string {
@@ -676,7 +688,7 @@ class TransactionManager {
       userId: payload.userId,
       applicationId: payload.applicationId,
       amount: payload.amount,
-      timestamp: payload.timestamp,      
+      timestamp: payload.timestamp,
     };
     const issueEarningsDetailsPB = this.getIssueEarningDetailsPB(privateKey, issuePayload, TransactionManager.normalizeTimestamp('timestamp' in payload ? payload.timestamp : timestamp));
     const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
@@ -720,12 +732,12 @@ class TransactionManager {
         }
       }
     }
-    
+
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.WalletToUser');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.WALLET_LINK);
-    const rpcRequestBytes = rpcRequest.serializeBinary();    
+    const rpcRequestBytes = rpcRequest.serializeBinary();
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -742,22 +754,22 @@ class TransactionManager {
       header: transactionHeaderBytes,
       headerSignature: signature,
       payload: rpcRequestBytes,
-    });    
+    });
     return tx;
   }
 
   private getLastEthBlockTransaction(privateKey, blockId: number) {
     // prepare transaction
-    // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
+    // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
     // const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
     const lastEthBlock = new earnings_pb.LastEthBlock();
-    lastEthBlock.setId(blockId);    
+    lastEthBlock.setId(blockId);
     const params = new any.Any();
     params.setValue(lastEthBlock.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.LastEthBlock');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.LAST_ETH_BLOCK_UPDATE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
-    const stateAddress = this.getLastEthBlockStateAddress();    
+    const stateAddress = this.getLastEthBlockStateAddress();
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -774,22 +786,22 @@ class TransactionManager {
       header: transactionHeaderBytes,
       headerSignature: signature,
       payload: rpcRequestBytes,
-    });    
+    });
     return tx;
   }
   private async getIssueTransaction(privateKey, issueEarningsDetailsPB: any) {
     // prepare transaction
-    const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();    
+    const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
     const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
     const earning = new earnings_pb.Earning();
     earning.setDetails(issueEarningsDetailsPB);
-    earning.setSignature(earningsSignature);    
+    earning.setSignature(earningsSignature);
     const params = new any.Any();
     params.setValue(earning.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.Earning');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.ISSUE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
-    
+
     const addressArgs = [
       { data: issueEarningsDetailsPB.getApplicationId(), start: 0, end: 4 },
       { data: issueEarningsDetailsPB.getUserId(), start: 0, end: 4 },
@@ -799,7 +811,7 @@ class TransactionManager {
     const stateAddress = this.getEarningStateAddress('pending', addressArgs);
     const balanceAddress = this.getBalanceStateAddress(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
     const stateAddresses = [stateAddress, balanceAddress];
-    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:    
+    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(issueEarningsDetailsPB.getApplicationId(), issueEarningsDetailsPB.getUserId());
     if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
       const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
@@ -813,7 +825,7 @@ class TransactionManager {
         }
       }
     }
-    
+
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -830,26 +842,26 @@ class TransactionManager {
       header: transactionHeaderBytes,
       headerSignature: signature,
       payload: rpcRequestBytes,
-    });    
+    });
     return tx;
   }
-  
-  
-  private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {    
+
+
+  private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {
     const balanceUpdate = new earnings_pb.BalanceUpdate();
     balanceUpdate.setPublicAddress(TransactionManager.normalizeAddress(balanceUpdateData.address));
-    balanceUpdate.setOnchainBalance(balanceUpdateData.balance);    
+    balanceUpdate.setOnchainBalance(balanceUpdateData.balance);
     balanceUpdate.setTxHash(TransactionManager.normalizeAddress(balanceUpdateData.txHash));
     balanceUpdate.setBlockId(balanceUpdateData.blockId);
     balanceUpdate.setTimestamp(TransactionManager.normalizeTimestamp(balanceUpdateData.timestamp));
 
-        
+
     const params = new any.Any();
-    params.setValue(balanceUpdate.serializeBinary());    
+    params.setValue(balanceUpdate.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.BalanceUpdate');
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.BALANCE_UPDATE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
-    
+
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -866,7 +878,7 @@ class TransactionManager {
       header: transactionHeaderBytes,
       headerSignature: signature,
       payload: rpcRequestBytes,
-    });    
+    });
     return tx;
   }
 
@@ -874,7 +886,7 @@ class TransactionManager {
     const stateAddresses: string[] = [stateAddress];
     const paramData = JSON.stringify({ timestamp: TransactionManager.normalizeTimestamp(moment().unix()), addresses: stateAddresses });
     const params = new any.Any();
-    params.setValue(Buffer.from(paramData));    
+    params.setValue(Buffer.from(paramData));
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.REVOKE);
     const rpcRequestBytes = rpcRequest.serializeBinary();
     const revokeAddresses: string[] = [];
@@ -884,7 +896,7 @@ class TransactionManager {
       revokeAddresses.push(revokeAddress);
       this.revokedAddresses[address] = revokeAddress;
     });
-    
+
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
         familyName: this.familyName,
         familyVersion: this.familyVersion,
@@ -901,7 +913,7 @@ class TransactionManager {
       header: transactionHeaderBytes,
       headerSignature: signature,
       payload: rpcRequestBytes,
-    });    
+    });
     return tx;
   }
 

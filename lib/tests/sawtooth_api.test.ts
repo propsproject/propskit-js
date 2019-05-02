@@ -9,7 +9,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 const BigNumber = require('bignumber.js');
 BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
-
+import * as mocha from 'mocha';
 
 let startTime = Math.floor(Date.now() / 1000);
 const amounts = [125, 50.5];
@@ -93,7 +93,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       return (timePassed > 1);
     },              10000, 1000);
   });
-
+/*
   it('Successfully issue an earning', async() => {
     const app = 'app1';
     const user = 'user1';
@@ -198,7 +198,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceOnChain.linkedWallet).to.be.equal('');
   });
 
-
+/*
   it('Successfully update mainchain balance', async() => {
     const tm:TransactionManager = new TransactionManager(options);
     const res:boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock, txHash, blockNum, timestamp);
@@ -224,7 +224,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceOnChain.type).to.be.equal(1);
     expect(balanceOnChain.linkedWallet).to.be.equal('');
   });
-
+*/
   it('Successfully link app user to wallet', async() => {
     const app = 'app1';
     const user = 'user1';
@@ -263,7 +263,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceTotalAmount).to.be.equal(balanceAtBlock);
     expect(balanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
-
+/*
   it('Successfully update last eth block Id', async() => {
     const tm:TransactionManager = new TransactionManager(options);
     const res: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1);
@@ -282,7 +282,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // expect last eth block to be correct
     expect(ethBlockOnChain.id).to.be.equal(lastEthBlockId1);
   });
-
+/*
   it('Successfully submit multiple transactions with batch', async() => {
     const app = 'app1';
     const user = 'user1';
@@ -358,7 +358,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.type).to.be.equal(0);
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
-
+*/
 //   it('Successfully issue an earning to user with linked wallet', async() => {
 //     const addresses = {};
 //     const app = 'app1';
