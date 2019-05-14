@@ -1,7 +1,7 @@
 // tslint:disable:readonly-keyword member-access array-type readonly-array no-object-mutation
 import { ClientEventsSubscribeRequest } from '../../sawtooth-sdk-ts/client_event_pb';
 import { EventFilter, EventList, EventSubscription } from '../../sawtooth-sdk-ts/events_pb';
-import { decodeBalanceEvent, decodeBlockCommit, decodeEarningEvent } from './serializers';
+import { decodeBalanceEvent, decodeBlockCommit, decodeEarningEvent, decodeWalletLinkedEvent } from './serializers';
 import { Stream } from './stream';
 
 export type EventHandle = (e : any) => void;
@@ -12,6 +12,8 @@ export const EventTypes = {
   blockCommit: 'sawtooth/block-commit',
   earnings: 'pending-props:earnings',
   stateDelta: 'sawtooth/state-delta',
+  walletLinked: 'pending-props:walletl',
+  walletUnlinked: 'pending-props:walletl',
 };
 
 /**
@@ -39,7 +41,7 @@ export const EventTypes = {
  * ```
  *
  */
-export class Subscriber {  
+export class Subscriber {
   subscriptions : Array < EventSubscription > = [];
   deltas = {};
   decoders : any = {};
@@ -54,6 +56,7 @@ export class Subscriber {
     this.decoders[EventTypes.earnings] = decodeEarningEvent;
     this.decoders[EventTypes.blockCommit] = decodeBlockCommit;
     this.decoders[EventTypes.balance] = decodeBalanceEvent;
+    this.decoders[EventTypes.walletLinked] = decodeWalletLinkedEvent;
     this.stream = new Stream(validator, () => this.onConnectHandle(this), () => this.onDisconnectHandle(this), this.processEvtList.bind(this));
   }
 
@@ -94,18 +97,19 @@ export class Subscriber {
    */
   public processEvtList(events : EventList) : void {
     events.getEventsList().reduce((prev, curr) => {
-      try {        
+      try {
         const event = this.decoders[curr.getEventType()](curr);
         prev.push({
           event,
-          'event_type': curr.getEventType()
+          event_type: curr.getEventType()
         });
-        return prev
+        return prev;
       } catch (error) {
         this.onError(error);
         return prev;
       }
-      }, []).forEach(e => {
+    },
+      []).forEach((e) => {
         this.deltas[e.event_type](e);
       });
   }
@@ -123,7 +127,7 @@ export class Subscriber {
 
   public subscribeBlocks(callback : any) : Subscriber {
     const subscription: EventSubscription = new EventSubscription();
-    subscription.setEventType(EventTypes.blockCommit);    
+    subscription.setEventType(EventTypes.blockCommit);
     this.deltas[subscription.getEventType()] = callback;
     return this
       .addSubscription(subscription)
@@ -185,12 +189,32 @@ export class Subscriber {
       .sendSubscribeRequest(lastKnownBlockIDs);
   }
 
+  public subscribeWalletLinked(callback: any, lastKnownBlockIDs?: string[]) {
+    const filter: EventFilter = this.getFilter(EventFilter.FilterType.REGEX_ANY, 'event_type', '^.*');
+    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.walletLinked);
+    this.deltas[subscription.getEventType()] = callback;
+
+    return this
+      .addSubscription(subscription)
+      .sendSubscribeRequest(lastKnownBlockIDs);
+  }
+
+  public subscribeWalletUnlinked(callback: any, lastKnownBlockIDs?: string[]) {
+    const filter: EventFilter = this.getFilter(EventFilter.FilterType.REGEX_ANY, 'event_type', '^.*');
+    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.walletLinked);
+    this.deltas[subscription.getEventType()] = callback;
+
+    return this
+      .addSubscription(subscription)
+      .sendSubscribeRequest(lastKnownBlockIDs);
+  }
 
   public sendSubscribeRequest(lastKnownBlockIDs?: string[]) : Subscriber {
     const request: ClientEventsSubscribeRequest = new ClientEventsSubscribeRequest();
     request.setSubscriptionsList(this.subscriptions);
+
     if (lastKnownBlockIDs) {
-        request.setLastKnownBlockIdsList(lastKnownBlockIDs);
+      request.setLastKnownBlockIdsList(lastKnownBlockIDs);
     }
     this
         .stream

@@ -86,9 +86,9 @@ export const decodeBlockCommit = (e : Event) : DecodedBlockCommit => {
 // tslint:disable-next-line:max-classes-per-file
 export class DecodedBalanceEvent {
     /**
-     * Creates an instance of DecodedBalanceEvent.     
+     * Creates an instance of DecodedBalanceEvent.
      * @param {string} recipient ethereum address balance of changed
-     * @param {BalanceEvent} balanceEvent balance event     
+     * @param {BalanceEvent} balanceEvent balance event
      * @param {ReadonlyArray < Event.Attribute >} attributes attributes of the balance event
      * @memberof DecodedBalanceEvent
      */
@@ -102,7 +102,7 @@ export class DecodedBalanceEvent {
  * @returns {DecodedBalanceEvent}
  */
 export const decodeBalanceEvent = (e : Event) : DecodedBalanceEvent => {
-  return Object.freeze({        
+  return Object.freeze({
     attributes: e.getAttributesList(),
     balanceEvent: BalanceEvent.deserializeBinary(e.getData_asU8()),
     eventType: e
@@ -112,6 +112,49 @@ export const decodeBalanceEvent = (e : Event) : DecodedBalanceEvent => {
     recipient: e
       .getAttributesList()
       .find(a => a.getKey() === 'recipient')
+      .getValue(),
+  });
+};
+
+
+// tslint:disable-next-line:max-classes-per-file
+export class DecodedWalletLinkedEvent {
+  /**
+   * Creates an instance of DecodedWalletLinkedEvent.
+   * This class is used for both WalletLinked and WalletUnlinked events, check event_type for the type
+   *
+   * @param {string} address Address of the wallet linked
+   * @param {string} recipient The recepient (userId)
+   * @param {string} application The application id
+   * @param {string} signature The signature used to sign the wallet linking
+   * @param {ReadonlyArray < Event.Attribute >} attributes attributes of the balance event
+   * @memberof DecodedWalletLinkedEvent
+   */
+  constructor(readonly address : string, readonly recipient: string, readonly application: string, readonly signature: string, readonly attributes: ReadonlyArray < Event.Attribute >) {}
+}
+
+export const decodeWalletLinkedEvent = (e : Event) : DecodedWalletLinkedEvent => {
+  return Object.freeze({
+    attributes: e.getAttributesList(),
+    eventType: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'event_type')
+      .getValue(),
+    recipient: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'recipient')
+      .getValue(),
+    address: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'address')
+      .getValue(),
+    application: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'application')
+      .getValue(),
+    signature: e
+      .getAttributesList()
+      .find(a => a.getKey() === 'signature')
       .getValue(),
   });
 };
