@@ -2,6 +2,7 @@ import { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, WalletB
 import { BalanceDetails } from './proto/balance_pb';
 import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
+import ActivityPayload from './payloads/activity_payload';
 
 import * as propsclient from './client';
 import * as utils from './common';
@@ -21,6 +22,7 @@ export {
   BatchDetailsTransaction,
   WalletBalance,
   AppUserBalance,
+  ActivityPayload,
   BalanceDetails,
   Props,
 };
