@@ -10,6 +10,7 @@ enum Method {
     BALANCE_UPDATE = 3;
     LAST_ETH_BLOCK_UPDATE = 4;
     WALLET_LINK = 5;
+    ACTIVITY_LOG = 6;
 }
 
 message Params {

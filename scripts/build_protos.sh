@@ -14,6 +14,7 @@ EARNING_PROTO="${PROTOS_PATH}/earning.proto"
 BALANCE_PROTO="${PROTOS_PATH}/balance.proto"
 EVENTS_PROTO="${PROTOS_PATH}/events.proto"
 PAYLOAD_PROTO="${PROTOS_PATH}/payload.proto"
+ACTIVITY_PROTO="${PROTOS_PATH}/activity.proto"
 PROTO_PB_OUT="${CURRENT_DIR}/lib/proto"
 
 TEMP_DIR="${CURRENT_DIR}/temp"
@@ -33,12 +34,13 @@ protoc  \
     "${BALANCE_PROTO}" \
     "${EVENTS_PROTO}" \
     "${PAYLOAD_PROTO}" \
+    "${ACTIVITY_PROTO}" \
     --ts_out="${PROTO_PB_OUT}"
 
 git clone "${SAWTOOTH_PROTOS_URL}"
 sawtoothProtoFiles=$(ls ${SAWTOOTH_PROTOS})
 
-for filename in ${SAWTOOTH_PROTOS}/*.proto; do    
+for filename in ${SAWTOOTH_PROTOS}/*.proto; do
     protoc  \
         --plugin="protoc-gen-ts=${PROTOC_GEN_TS_PATH}" \
         --js_out="import_style=commonjs,binary:${SAWTOOTH_OUT}" \

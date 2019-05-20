@@ -8,6 +8,7 @@ const payloads_pb = require('./proto/payload_pb');
 const balance_pb = require('./proto/balance_pb');
 const users_pb = require('./proto/users_pb');
 const earnings_pb = require('./proto/earning_pb');
+const activity_pb = require('./proto/activity_pb');
 const ethUtil = require('ethereumjs-util');
 const { createHash } = require('crypto');
 const moment = require('moment');
@@ -17,6 +18,7 @@ const web3 = new Web3();
 
 import IssuePayload from './payloads/issue_payload';
 import SettlePayload from './payloads/settle_payload';
+import ActivityPayload from './payloads/activity_payload';
 import { Balance } from './proto/balance_pb';
 import { LastEthBlock } from './proto/earning_pb';
 import { WalletToUser } from './proto/users_pb';
@@ -131,6 +133,7 @@ class TransactionManager {
       balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
       walletLink: createHash('sha512').update('pending-props:earnings:walletl').digest('hex').substring(0, 6),
+      activityLog: createHash('sha512').update('pending-props:earnings:activity_log').digest('hex').substring(0, 6),
     };
 
     this.accumulateTransactions = false;
@@ -461,6 +464,27 @@ class TransactionManager {
     return true;
   }
 
+  private getActivityLogPB(payload: ActivityPayload): any {
+    const activity = new activity_pb.ActivityLog();
+    activity.setApplicationId(payload.applicationId);
+    activity.setUserId(payload.userId);
+    activity.setDate(payload.date);
+    activity.setTimestamp(payload.timestamp);
+
+    return activity;
+  }
+
+  public async submitActivityLog(privateKey, activityPayloads: ActivityPayload[]) {
+    const transactions = [];
+
+    for (let i = 0; i < activityPayloads.length; i += 1) {
+      transactions.push(await this.getActivityLogTransaction(privateKey, this.getActivityLogPB(activityPayloads[i])));
+    }
+
+    const batch = this.getBatch(privateKey, transactions);
+    return this.makeSubmitAPIRequest(batch);
+  }
+
   public async statusLookup(batchUri: string): Promise<boolean> {
     return this.makeStatusAPIRequest(batchUri);
   }
@@ -531,6 +555,10 @@ class TransactionManager {
             break;
           case 'WALLETLINK':
             dataObject = new users_pb.WalletToUser.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;
+          case 'ACTIVITY_LOG':
+            dataObject = new activity_pb.ActivityLog.deserializeBinary(bytes);
             ret = (dataObject.toObject());
             break;
         }
@@ -637,6 +665,27 @@ class TransactionManager {
     const postfix: string = createHash('sha512').update('LastEthBlockAddress').digest('hex').toLowerCase().substring(0,64);
 
     return `${prefix}${postfix}`;
+  }
+
+  public getActivityLogAddress(date: number, userId: string, appId: string): string {
+    const prefix: string = this.prefixes['activityLog'];
+
+    const part1 = createHash('sha512')
+      .update(date.toString())
+      .digest('hex')
+      .toLowerCase()
+      .substring(0, 8);
+    const part2 = createHash('sha512')
+      .update(appId)
+      .digest('hex')
+      .toLowerCase()
+      .substring(0, 10);
+    const part3 = createHash('sha512')
+      .update(userId)
+      .digest('hex')
+      .toLowerCase()
+      .substring(0,46);
+    return `${prefix}${part1}${part2}${part3}`;
   }
 
   private getRPCRequest(params, method) {
@@ -855,7 +904,6 @@ class TransactionManager {
     balanceUpdate.setBlockId(balanceUpdateData.blockId);
     balanceUpdate.setTimestamp(TransactionManager.normalizeTimestamp(balanceUpdateData.timestamp));
 
-
     const params = new any.Any();
     params.setValue(balanceUpdate.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.BalanceUpdate');
@@ -906,6 +954,43 @@ class TransactionManager {
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
         payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
+    }).finish();
+
+    const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
+    const tx =  protobuf.Transaction.create({
+      header: transactionHeaderBytes,
+      headerSignature: signature,
+      payload: rpcRequestBytes,
+    });
+    return tx;
+  }
+
+  private getActivityLogTransaction(privateKey: string, activityLogTransactionPB: any) {
+
+    const hashToSign = createHash('sha512')
+      .update(activityLogTransactionPB.serializeBinary())
+      .digest('hex')
+      .toLowerCase();
+
+    // const activitySignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
+
+    const params = new any.Any();
+    params.setValue(activityLogTransactionPB.serializeBinary());
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.ActivityLog');
+    const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.ACTIVITY_LOG);
+    const rpcRequestBytes = rpcRequest.serializeBinary();
+
+    const stateAddresses = [this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId())];
+
+    const transactionHeaderBytes = protobuf.TransactionHeader.encode({
+      familyName: this.familyName,
+      familyVersion: this.familyVersion,
+      inputs: stateAddresses,
+      outputs: stateAddresses,
+      signerPublicKey: TransactionManager.getPublicKey(privateKey),
+      batcherPublicKey: TransactionManager.getPublicKey(privateKey),
+      dependencies: [],
+      payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
     }).finish();
 
     const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
