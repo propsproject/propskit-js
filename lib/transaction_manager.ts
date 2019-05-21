@@ -435,9 +435,9 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
-  public async submitNewEthBlockIdTransaction(privateKey, blockId: number): Promise<boolean> {
+  public async submitNewEthBlockIdTransaction(privateKey, blockId: number, timestamp: number): Promise<boolean> {
     const transactions = [];
-    transactions.push(this.getLastEthBlockTransaction(privateKey, blockId));
+    transactions.push(this.getLastEthBlockTransaction(privateKey, blockId, timestamp));
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -807,12 +807,13 @@ class TransactionManager {
     return tx;
   }
 
-  private getLastEthBlockTransaction(privateKey, blockId: number) {
+  private getLastEthBlockTransaction(privateKey, blockId: number, timestamp: number) {
     // prepare transaction
     // const hashToSign = createHash('sha512').update(issueEarningsDetailsPB.serializeBinary()).digest('hex').toLowerCase();
     // const earningsSignature = TransactionManager.getSigner(privateKey).sign(Buffer.from(hashToSign));
     const lastEthBlock = new earnings_pb.LastEthBlock();
     lastEthBlock.setId(blockId);
+    lastEthBlock.setTimestamp(timestamp);
     const params = new any.Any();
     params.setValue(lastEthBlock.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.LastEthBlock');

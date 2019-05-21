@@ -85,6 +85,9 @@ export class LastEthBlockEvent extends jspb.Message {
   getMessage(): string;
   setMessage(value: string): void;
 
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LastEthBlockEvent.AsObject;
   static toObject(includeInstance: boolean, msg: LastEthBlockEvent): LastEthBlockEvent.AsObject;
@@ -99,6 +102,7 @@ export namespace LastEthBlockEvent {
   export type AsObject = {
     blockid: number,
     message: string,
+    timestamp: number,
   }
 }
 

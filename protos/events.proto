@@ -32,6 +32,7 @@ message BalanceEvent {
 message LastEthBlockEvent {
     int64 blockId = 1;
     string message = 2;
+    int64 timestamp = 3;
 }
 
 message WalletLinkedEvent {
