@@ -981,7 +981,7 @@ class TransactionManager {
     const rpcRequest = this.getRPCRequest(params, payloads_pb.Method.ACTIVITY_LOG);
     const rpcRequestBytes = rpcRequest.serializeBinary();
 
-    const stateAddresses = [this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId())];
+    const stateAddresses = [this.getLastEthBlockStateAddress(), this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId())];
 
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
       familyName: this.familyName,
