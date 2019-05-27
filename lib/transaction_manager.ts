@@ -13,6 +13,7 @@ const ethUtil = require('ethereumjs-util');
 const { createHash } = require('crypto');
 const moment = require('moment');
 const BigNumber = require('bignumber.js');
+BigNumber.set({ EXPONENTIAL_AT: 1e+9 });
 const Web3 = require('web3');
 const web3 = new Web3();
 

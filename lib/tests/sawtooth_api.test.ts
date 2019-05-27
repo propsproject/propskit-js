@@ -301,7 +301,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 
   it('Successfully update last eth block Id', async() => {
     const tm:TransactionManager = new TransactionManager(options);
-    const res: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1);
+    const res: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1, Math.floor(new Date().getTime() / 1000));
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
     // wait a bit for it to be on chain
@@ -331,7 +331,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const tm:TransactionManager = new TransactionManager(options);
     tm.setAccumulateTransactions(true);
     const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [issuePayload], issueTimestamp2);
-    const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2);
+    const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2, Math.floor(new Date().getTime() / 1000));
     const res3: boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock2, txHash2, blockNum2, timestamp2);
     expect(res1).to.be.equal(true);
     expect(res2).to.be.equal(true);
