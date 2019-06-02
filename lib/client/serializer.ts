@@ -1,4 +1,4 @@
-import {Earning, Settlements} from '../proto/earning_pb';
+import { Transaction } from '../proto/transaction_pb';
 
 /**
  *  Wrapper class for state query responses that has deserialization utility methods
@@ -16,29 +16,13 @@ export class QueryResults {
    * @returns {ReadonlyArray < Earning >}
    * @memberof QueryResults
    */
-  public toEarnings() : ReadonlyArray < Earning > {
+  public toTransactions() : ReadonlyArray < Transaction > {
     return this
       .data
       .data
       .map(entry => {
         const bytes : Uint8Array = new Uint8Array(Buffer.from(entry.data, 'base64'));
-        return Earning.deserializeBinary(bytes);
-      });
-  }
-
-  /**
-   * Deserialize state query result into an array of settlements
-   *
-   * @returns {ReadonlyArray < Settlements >}
-   * @memberof QueryResults
-   */
-  public toSettlements() : ReadonlyArray < Settlements > {
-    return this
-      .data
-      .data
-      .map(entry => {
-        const bytes : Uint8Array = new Uint8Array(Buffer.from(entry.data, 'base64'));
-        return Settlements.deserializeBinary(bytes);
+        return Transaction.deserializeBinary(bytes);
       });
   }
 

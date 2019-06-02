@@ -2,24 +2,22 @@
 // file: events.proto
 
 import * as jspb from "google-protobuf";
-import * as earning_pb from "./earning_pb";
+import * as payload_pb from "./payload_pb";
 import * as balance_pb from "./balance_pb";
 import * as users_pb from "./users_pb";
+import * as transaction_pb from "./transaction_pb";
 
-export class EarningEvent extends jspb.Message {
-  hasEarning(): boolean;
-  clearEarning(): void;
-  getEarning(): earning_pb.Earning | undefined;
-  setEarning(value?: earning_pb.Earning): void;
+export class TransactionEvent extends jspb.Message {
+  hasTransaction(): boolean;
+  clearTransaction(): void;
+  getTransaction(): transaction_pb.Transaction | undefined;
+  setTransaction(value?: transaction_pb.Transaction): void;
 
-  getIssueaddress(): string;
-  setIssueaddress(value: string): void;
+  getType(): payload_pb.Method;
+  setType(value: payload_pb.Method): void;
 
-  getRevokeaddress(): string;
-  setRevokeaddress(value: string): void;
-
-  getSettleaddress(): string;
-  setSettleaddress(value: string): void;
+  getStateaddress(): string;
+  setStateaddress(value: string): void;
 
   getMessage(): string;
   setMessage(value: string): void;
@@ -28,21 +26,20 @@ export class EarningEvent extends jspb.Message {
   setDescription(value: string): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): EarningEvent.AsObject;
-  static toObject(includeInstance: boolean, msg: EarningEvent): EarningEvent.AsObject;
+  toObject(includeInstance?: boolean): TransactionEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: TransactionEvent): TransactionEvent.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: EarningEvent, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): EarningEvent;
-  static deserializeBinaryFromReader(message: EarningEvent, reader: jspb.BinaryReader): EarningEvent;
+  static serializeBinaryToWriter(message: TransactionEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TransactionEvent;
+  static deserializeBinaryFromReader(message: TransactionEvent, reader: jspb.BinaryReader): TransactionEvent;
 }
 
-export namespace EarningEvent {
+export namespace TransactionEvent {
   export type AsObject = {
-    earning?: earning_pb.Earning.AsObject,
-    issueaddress: string,
-    revokeaddress: string,
-    settleaddress: string,
+    transaction?: transaction_pb.Transaction.AsObject,
+    type: payload_pb.Method,
+    stateaddress: string,
     message: string,
     description: string,
   }
@@ -178,5 +175,6 @@ export enum EventType {
   LASTETHBLOCKUPDATED = 4,
   WALLETLINKED = 5,
   WALLETUNLINKED = 6,
+  TRANSACTIONADDED = 7,
 }
 

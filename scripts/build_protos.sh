@@ -10,7 +10,7 @@ fi
 PROTOS_PATH="${CURRENT_DIR}/protos"
 PROTOC_GEN_TS_PATH="${CURRENT_DIR}/node_modules/.bin/protoc-gen-ts"
 
-EARNING_PROTO="${PROTOS_PATH}/earning.proto"
+TRANSACTION_PROTO="${PROTOS_PATH}/transaction.proto"
 BALANCE_PROTO="${PROTOS_PATH}/balance.proto"
 EVENTS_PROTO="${PROTOS_PATH}/events.proto"
 PAYLOAD_PROTO="${PROTOS_PATH}/payload.proto"
@@ -30,7 +30,7 @@ protoc  \
     --plugin="protoc-gen-ts=${PROTOC_GEN_TS_PATH}" \
     --js_out="import_style=commonjs,binary:${PROTO_PB_OUT}" \
     -I "${PROTOS_PATH}" \
-    "${EARNING_PROTO}" \
+    "${TRANSACTION_PROTO}" \
     "${BALANCE_PROTO}" \
     "${EVENTS_PROTO}" \
     "${PAYLOAD_PROTO}" \

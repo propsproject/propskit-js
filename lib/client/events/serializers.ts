@@ -1,27 +1,27 @@
-import { BalanceEvent, EarningEvent } from '../../proto/events_pb';
+import { BalanceEvent, TransactionEvent } from '../../proto/events_pb';
 import { Event } from '../../sawtooth-sdk-ts/events_pb';
 
-export class DecodedEarningEvent {
+export class DecodedTransactionEvent {
     /**
-     * Creates an instance of DecodedEarningEvent.
+     * Creates an instance of DecodedTransactionEvent.
      * @param {string} application application id that issued the earning
      * @param {string} recipient user id that earning was issued to
      * @param {string} description description/reason for why it was issued
-     * @param {EarningEvent} earningEvent earning event
-     * @param {string} eventType type of action that took place (ISSUE, REVOKE, SETTLE)
+     * @param {TransactionEvent} transactionEvent transaction event
+     * @param {string} transactionType type of action that took place (ISSUE, REVOKE, SETTLE)
      * @param {ReadonlyArray < Event.Attribute >} attributes attributes of the earning event
-     * @memberof DecodedEarningEvent
+     * @memberof DecodedTransactionEvent
      */
-  constructor(readonly application : string, readonly recipient : string, readonly description : string, readonly earningEvent : EarningEvent, readonly eventType : string, readonly attributes : ReadonlyArray < Event.Attribute >) {}
+  constructor(readonly application : string, readonly recipient : string, readonly description : string, readonly transactionEvent : TransactionEvent, readonly transactionType : string, readonly attributes : ReadonlyArray < Event.Attribute >) {}
 }
 
 /**
  * Decodes an earning event adding top level entries into an about for all data
  *
  * @param {Event} e earning event that will be decoded
- * @returns {DecodedEarningEvent}
+ * @returns {DecodedTransactionEvent}
  */
-export const decodeEarningEvent = (e : Event) : DecodedEarningEvent => {
+export const decodeTransactionEvent = (e : Event) : DecodedTransactionEvent => {
   const obj = {
     application: e
       .getAttributesList()
@@ -32,10 +32,10 @@ export const decodeEarningEvent = (e : Event) : DecodedEarningEvent => {
       .getAttributesList()
       .find(a => a.getKey() === 'description')
       .getValue(),
-    earningEvent: EarningEvent.deserializeBinary(e.getData_asU8()),
-    eventType: e
+    transactionEvent: TransactionEvent.deserializeBinary(e.getData_asU8()),
+    transactionType: e
       .getAttributesList()
-      .find(a => a.getKey() === 'event_type')
+      .find(a => a.getKey() === 'transaction_type')
       .getValue(),
     recipient: e
       .getAttributesList()

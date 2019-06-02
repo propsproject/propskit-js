@@ -88,6 +88,30 @@ export namespace BalanceUpdate {
   }
 }
 
+export class LastEthBlock extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LastEthBlock.AsObject;
+  static toObject(includeInstance: boolean, msg: LastEthBlock): LastEthBlock.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LastEthBlock, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LastEthBlock;
+  static deserializeBinaryFromReader(message: LastEthBlock, reader: jspb.BinaryReader): LastEthBlock;
+}
+
+export namespace LastEthBlock {
+  export type AsObject = {
+    id: number,
+    timestamp: number,
+  }
+}
+
 export enum Method {
   ISSUE = 0,
   REVOKE = 1,

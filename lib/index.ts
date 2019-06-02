@@ -1,7 +1,6 @@
 import { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, WalletBalance, AppUserBalance } from './transaction_manager';
 import { BalanceDetails } from './proto/balance_pb';
-import IssuePayload from './payloads/issue_payload';
-import SettlePayload from './payloads/settle_payload';
+import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
 
 import * as propsclient from './client';
@@ -16,8 +15,7 @@ class Props {
 
 export {
   TransactionManager,
-  IssuePayload,
-  SettlePayload,
+  TransactionPayload,  
   SubmitAPIResponse,
   BatchDetailsTransaction,
   WalletBalance,

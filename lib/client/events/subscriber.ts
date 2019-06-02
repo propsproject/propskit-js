@@ -1,7 +1,7 @@
 // tslint:disable:readonly-keyword member-access array-type readonly-array no-object-mutation
 import { ClientEventsSubscribeRequest } from '../../sawtooth-sdk-ts/client_event_pb';
 import { EventFilter, EventList, EventSubscription } from '../../sawtooth-sdk-ts/events_pb';
-import { decodeBalanceEvent, decodeBlockCommit, decodeEarningEvent, decodeWalletLinkedEvent } from './serializers';
+import { decodeBalanceEvent, decodeBlockCommit, decodeTransactionEvent, decodeWalletLinkedEvent } from './serializers';
 import { Stream } from './stream';
 
 export type EventHandle = (e : any) => void;
@@ -10,7 +10,7 @@ export type ErrCallback = (e : Error) => void;
 export const EventTypes = {
   balance: 'pending-props:balance',
   blockCommit: 'sawtooth/block-commit',
-  earnings: 'pending-props:earnings',
+  transaction: 'pending-props:transaction',
   stateDelta: 'sawtooth/state-delta',
   walletLinked: 'pending-props:walletl',
   walletUnlinked: 'pending-props:walletl',
@@ -53,7 +53,7 @@ export class Subscriber {
    * @memberof Subscriber
    */
   constructor(public readonly validator : string, public onConnectHandle : any, public onDisconnectHandle : any, public onError : any) {
-    this.decoders[EventTypes.earnings] = decodeEarningEvent;
+    this.decoders[EventTypes.transaction] = decodeTransactionEvent;
     this.decoders[EventTypes.blockCommit] = decodeBlockCommit;
     this.decoders[EventTypes.balance] = decodeBalanceEvent;
     this.decoders[EventTypes.walletLinked] = decodeWalletLinkedEvent;
@@ -101,7 +101,7 @@ export class Subscriber {
         const event = this.decoders[curr.getEventType()](curr);
         prev.push({
           event,
-          event_type: curr.getEventType()
+          event_type: curr.getEventType(),
         });
         return prev;
       } catch (error) {
@@ -144,16 +144,16 @@ export class Subscriber {
   }
 
   /**
-   *  Subscribe to any earnings events for the specified recipient
+   *  Subscribe to any transaction events for the specified recipient
    *
    * @param {string} filterAttr event attribute to filter on
    * @param {string} filterValue value that will be used during the regex
    * @param {string[]} [lastKnownBlockIDs last know block IDS let you catch up where left off
    * @memberof Subscriber
    */
-  public subscribeEarningsWithFilter(filterAttr : string, filterValue : string, callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
+  public subscribeTransactionsWithFilter(filterAttr : string, filterValue : string, callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
     const filter: EventFilter = this.getFilter(EventFilter.FilterType.REGEX_ANY, filterAttr, filterValue);
-    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.earnings);
+    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.transaction);
     this.deltas[subscription.getEventType()] = callback;
 
     return this
@@ -163,15 +163,15 @@ export class Subscriber {
 
   /**
    *
-   * @param {EarningEventHandle} callback function invoked whenever a new earning event(s) are received from the [Stream]
+   * @param {TransactionEventHandle} callback function invoked whenever a new transaction event(s) are received from the [Stream]
    * @param {ErrCallback} errCallBack function to handle any errors thrown
    * @param {string} [eventType='*']
    * @param {string[]} [lastKnownBlockIDs last know block IDS let you catch up where left off
    * @memberof Subscriber
    */
-  public subscribeAllEarnings(callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
+  public subscribeAllTransactions(callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
     const filter: EventFilter = this.getFilter(EventFilter.FilterType.REGEX_ANY, 'event_type', '^.*');
-    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.earnings);
+    const subscription: EventSubscription = this.getSubscription(filter, EventTypes.transaction);
     this.deltas[subscription.getEventType()] = callback;
 
     return this
