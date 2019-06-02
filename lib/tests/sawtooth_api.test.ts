@@ -128,7 +128,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const activityAddress = tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
 
     const activityOnChain = await tm.addressLookup(activityAddress, 'ACTIVITY_LOG');
-
+    console.log('activityOnChain:'+JSON.stringify(activityOnChain));
     // expect earning details to be correct
     expect(activityOnChain.userId).to.be.equal(activityPayload.userId);
     expect(activityOnChain.applicationId).to.be.equal(activityPayload.applicationId);
@@ -211,7 +211,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
-    const earningAddress = tm.getTransactionStateAddress(Method.REVOKE, transactionPayload.applicationId, transactionPayload.userId, issueTimestamp);    
+    const earningAddress = tm.getTransactionStateAddress(Method.REVOKE, transactionPayload.applicationId, transactionPayload.userId, revokeTimestamp);    
     const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');    
     // console.log(`revokeOnChain=${JSON.stringify(revokeOnChain)}`);
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
@@ -222,7 +222,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const balanceTotalAmount = new BigNumber(balanceOnChain.total, 10);
 
     // expect revoke details to be correct
-    expect(revokedPropsAmount.div(1e18).toString()).to.be.equal((amounts[0] - amounts[1]).toString());
+    expect(revokedPropsAmount.div(1e18).toString()).to.be.equal(amounts[1].toString());
     expect(earningOnChain.userId).to.be.equal(user);
     expect(earningOnChain.applicationId).to.be.equal(app);
     expect(earningOnChain.description).to.be.equal(transactionPayload.description);
@@ -286,7 +286,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
     const balancePendingAmount = new BigNumber(balanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(balanceOnChain.totalPending, 10);
-    const balanceTotalAmount = balanceOnChain.total;
+    const balanceTotalAmount = new BigNumber(balanceOnChain.total,10);
 
     // expect for link to be properly on chain
     const walletLinkAddress = tm.getWalletLinkAddress(walletAddress);
@@ -299,10 +299,13 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(walletLinkOnChain.usersList[0].signature).to.be.equal(sig);
 
     // expect balance details to be correct
-    expect(balancePendingAmount.div(1e18).toString()).to.be.equal('0');
-    expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal('0');
+    expect(balancePendingAmount.div(1e18).toString()).to.be.equal((amounts[0] - amounts[1]).toString());
+    expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal((amounts[0] - amounts[1]).toString());
     expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock);
-    expect(balanceTotalAmount).to.be.equal(balanceAtBlock);
+    const balanceAtBlockBN = new BigNumber(balanceAtBlock,10);
+    const totalPendingBN = new BigNumber((amounts[0] - amounts[1]));
+    const balanceAtBlockPlusTotalPending = balanceAtBlockBN.plus(totalPendingBN.times(1e18));
+    expect(balanceTotalAmount.toString()).to.be.equal(balanceAtBlockPlusTotalPending.toString());
     expect(balanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
 
@@ -365,7 +368,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // expect balance details to be correct
     const balanceOnChainTotalPending = new BigNumber(balanceOnChain.totalPending, 10);
     expect(balanceOnChain.pending).to.be.equal('0');
-    expect(balanceOnChainTotalPending.div(1e18).toString()).to.be.equal(amounts[0].toString());
+    expect(balanceOnChainTotalPending.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1]).toString());
     expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock2);
     expect(balanceOnChain.wallet).to.be.equal(walletAddress);
     expect(balanceOnChain.lastUpdateType).to.be.equal(1);
@@ -374,10 +377,8 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 
     const earningAddress = tm.getTransactionStateAddress(Method.ISSUE, transactionPayload.applicationId, transactionPayload.userId, issueTimestamp2);
     const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');
-    // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);
-    const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
-    // console.log(`userBalanceOnChain=${JSON.stringify(userBalanceOnChain)}`);
     const earningPropsAmount = new BigNumber(earningOnChain.amount, 10);
+    const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
     const balancePendingAmount = new BigNumber(userBalanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(userBalanceOnChain.totalPending, 10);
     const balanceTotalAmount = new BigNumber(userBalanceOnChain.total, 10);
@@ -392,9 +393,10 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
 
     // expect balance details to be correct
 
-    expect(balancePendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
-    expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal(amounts[0].toString());
-    expect(balanceTotalAmount.toString()).to.be.equal(earningPropsAmount.plus(expectedBalanceTotal).toString());
+    expect(balancePendingAmount.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1]).toString());
+    expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1]).toString());
+    const totalPendingBN = new BigNumber(((2 * amounts[0]) - amounts[1]));
+    expect(balanceTotalAmount.toString()).to.be.equal(totalPendingBN.times(1e18).plus(expectedBalanceTotal).toString());
     expect(userBalanceOnChain.transferable).to.be.equal(balanceAtBlock2);
     expect(userBalanceOnChain.userId).to.be.equal(user);
     expect(userBalanceOnChain.applicationId).to.be.equal(app);
@@ -403,6 +405,57 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
 
+  
+  it('Successfully update mainchain transfer with settlement', async() => {
+    /*
+    const settlementTxHash = "0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e";
+const settlementAmount = 1; // which is 1e18 = 1000000000000000000
+const settlementBalanceAtBlock = "428511433000000000000000";
+const settlementTimestamp = "1553107867";
+const settlementBlockNum = "3967331";
+*/
+    const app = 'app1';
+    const user = 'user1';
+    const tm:TransactionManager = new TransactionManager(options);
+    const res:boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, settlementBalanceAtBlock, settlementTxHash, Number(settlementBlockNum), Number(settlementTimestamp));
+    expect(res).to.be.equal(true);
+    const timeOfStart = Math.floor(Date.now());
+    // wait a bit for it to be on chain
+    await waitUntil(() => {
+      const timePassed =  Math.floor(Date.now()) - timeOfStart;
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      return (timePassed > (waitTimeUntilOnChain*longerTestWaitMultiplier));
+    },              10000, 100);
+    
+    const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
+    const settleTransactionAddress = tm.getTransactionStateAddress(Method.SETTLE, app, user, Number(settlementTimestamp));
+    const earningOnChain = await tm.addressLookup(settleTransactionAddress, 'TRANSACTION');
+    const earningPropsAmount = new BigNumber(earningOnChain.amount, 10);
+    const expectedBalanceTotal = new BigNumber(settlementBalanceAtBlock, 10);
+
+    // expect earning details to be correct
+    expect(earningPropsAmount.div(1e18).toString()).to.be.equal('1');
+    expect(earningOnChain.userId).to.be.equal(user);
+    expect(earningOnChain.applicationId).to.be.equal(app);    
+    expect(earningOnChain.timestamp.toString()).to.be.equal(settlementTimestamp.toString());
+    expect(earningOnChain.type).to.be.equal(Method.SETTLE);
+
+
+    const balancePendingAmount = new BigNumber(userBalanceOnChain.pending, 10);
+    const balanceTotalPendingAmount = new BigNumber(userBalanceOnChain.totalPending, 10);
+    const balanceTotalAmount = new BigNumber(userBalanceOnChain.total, 10);
+
+    expect(balancePendingAmount.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1] - 1).toString());
+    expect(balanceTotalPendingAmount.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1] - 1).toString());
+    const totalPendingBN = new BigNumber(((2 * amounts[0]) - amounts[1] - 1));
+    expect(balanceTotalAmount.toString()).to.be.equal(totalPendingBN.times(1e18).plus(expectedBalanceTotal).toString());
+    expect(userBalanceOnChain.transferable).to.be.equal(settlementBalanceAtBlock);
+    expect(userBalanceOnChain.userId).to.be.equal(user);
+    expect(userBalanceOnChain.applicationId).to.be.equal(app);
+    expect(userBalanceOnChain.lastUpdateType).to.be.equal(0);
+    expect(userBalanceOnChain.type).to.be.equal(0);
+    expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
+  });
 //   it('Successfully issue an earning to user with linked wallet', async() => {
 //     const addresses = {};
 //     const app = 'app1';

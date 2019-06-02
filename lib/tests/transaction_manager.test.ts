@@ -4,7 +4,8 @@ const chai = require('chai');
 // const sinon = require('sinon');
 const chaiAsPromised = require('chai-as-promised');
 import 'mocha';
-import IssuePayload from '../payloads/issue_payload';
+import TransactionPayload from '../payloads/transaction_payload';
+import { Method } from '../proto/payload_pb';
 
 chai.use(chaiAsPromised);
 
@@ -48,15 +49,15 @@ describe('Transaction Manager tests', async () => {
 
   it('Succesfully calculate a pending state address', async() => {
     const pk: string = 'fd899d64b5209b53e6b6380dbe195500d988b2184d3a7076681370d5d1c58408';
-    const ts: number = 1553425328;
+    const ts: number = 1559486262;
     // const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
     const userId: string = 'user1';
     const applicationId: string = 'app1';
-    const amount: number = 10.5;
-    const expectedAddress: string = 'a7db46458f9ec6764d743faabe21429755b354e18e365b6d79ada85d89a58e6e2eaba4';    
+    const amount: number = 25;
+    const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';    
     const tm: TransactionManager = new TransactionManager(options);
-    const issuePayload: IssuePayload = { userId, applicationId, amount, description: 'Broadcasting' };
-    const address: string = tm.getIssueStateAddress(pk, issuePayload, ts);
+    // const transactionPayload: TransactionPayload = { transactionType: Method.ISSUE, userId, applicationId, amount, description: 'Broadcasting' };
+    const address: string = tm.getTransactionStateAddress(Method.ISSUE, applicationId, userId, ts);
     expect(address).to.be.equal(expectedAddress);    
   });
 
