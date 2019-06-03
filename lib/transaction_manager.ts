@@ -83,6 +83,7 @@ interface TransactionManagerOptions {
   port?: number;
 }
 
+
 let instance = null;
 
 class TransactionManager {

@@ -1,5 +1,6 @@
 import { TransactionManager, SubmitAPIResponse, BatchDetailsTransaction, WalletBalance, AppUserBalance } from './transaction_manager';
 import { BalanceDetails } from './proto/balance_pb';
+import { Method } from './proto/payload_pb';
 import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
 
@@ -23,4 +24,5 @@ export {
   ActivityPayload,
   BalanceDetails,
   Props,
+  Method,
 };
