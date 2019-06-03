@@ -32,7 +32,7 @@ export const EventTypes = {
  *   };
  *
  *   const onConnect = (subscriber) => {
- *       subscriber.subscribeAllEarnings();
+ *       subscriber.subscribeAllTransactions();
  *       subscriber.subscribeBlocks();
  *   }
  *
