@@ -22,6 +22,7 @@ export class DecodedTransactionEvent {
  * @returns {DecodedTransactionEvent}
  */
 export const decodeTransactionEvent = (e : Event) : DecodedTransactionEvent => {
+  const transactionEvent: TransactionEvent = TransactionEvent.deserializeBinary(e.getData_asU8());
   const obj = {
     application: e
       .getAttributesList()
@@ -32,7 +33,7 @@ export const decodeTransactionEvent = (e : Event) : DecodedTransactionEvent => {
       .getAttributesList()
       .find(a => a.getKey() === 'description')
       .getValue(),
-    transactionEvent: TransactionEvent.deserializeBinary(e.getData_asU8()),
+    transactionEvent,
     transactionType: e
       .getAttributesList()
       .find(a => a.getKey() === 'transaction_type')
@@ -41,6 +42,7 @@ export const decodeTransactionEvent = (e : Event) : DecodedTransactionEvent => {
       .getAttributesList()
       .find(a => a.getKey() === 'recipient')
       .getValue(),
+    stateAddress: transactionEvent.getStateaddress(),
   };
   return Object.freeze(obj);
 };
