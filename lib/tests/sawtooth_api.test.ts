@@ -270,7 +270,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
   it('Successfully link app user to wallet', async() => {
     const app = 'app1';
     const user = 'user1';
-    const sig = await TransactionManager.signMessage(`${app}${user}`, walletAddress, pk);
+    const sig = await TransactionManager.signMessage(`${app}_${user}`, walletAddress, pk);
     const tm:TransactionManager = new TransactionManager(options);
     const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletAddress, app, user, sig);
     expect(res).to.be.equal(true);
@@ -592,7 +592,7 @@ const settlementBlockNum = "3967331";
 //     const user = 'user1';
 //     const linkedApp = 'app1';
 //     const linkedUser = 'user1';
-//     const sig =  await pendingProps.signMessage(`${app}${user}`, walletAddress, pk); // "signature21";
+//     const sig =  await pendingProps.signMessage(`${app}_${user}`, walletAddress, pk); // "signature21";
 
 //         // issue
 //     await pendingProps.linkWallet(walletAddress, app, user, sig);
