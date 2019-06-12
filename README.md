@@ -1,4 +1,4 @@
-# lib-props-js
+# Propskit-js
 
 This library is used with the Props Sidechain, making it easier to communicate with it via the rest API.
 It can do the following actions:

@@ -34,11 +34,11 @@ const txHash2 = '0x9ef12357191c917cbc3c8102c36948dc731b650852448c51f4705d0f30119
 const blockNum2 = 3966915;
 const timestamp2 = 1551632827;
 
-const settlementTxHash = "0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e";
+const settlementTxHash = '0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e';
 const settlementAmount = 1; // which is 1e18 = 1000000000000000000
-const settlementBalanceAtBlock = "428511433000000000000000";
-const settlementTimestamp = "1553107867";
-const settlementBlockNum = "3967331";
+const settlementBalanceAtBlock = '428511433000000000000000';
+const settlementTimestamp = '1553107867';
+const settlementBlockNum = '3967331';
 
 
 const lastEthBlockId1 = 3966915;
@@ -128,7 +128,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const activityAddress = tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
 
     const activityOnChain = await tm.addressLookup(activityAddress, 'ACTIVITY_LOG');
-    console.log('activityOnChain:'+JSON.stringify(activityOnChain));
+    console.log('activityOnChain:' + JSON.stringify(activityOnChain));
     // expect earning details to be correct
     expect(activityOnChain.userId).to.be.equal(activityPayload.userId);
     expect(activityOnChain.applicationId).to.be.equal(activityPayload.applicationId);
@@ -144,7 +144,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       transactionType: Method.ISSUE,
       userId: user,
       applicationId: app,
-      amount: amounts[0],      
+      amount: amounts[0],
       description: descriptions[0],
     };
 
@@ -159,7 +159,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
-    const earningAddress = tm.getTransactionStateAddress(Method.ISSUE, transactionPayload.applicationId, transactionPayload.userId, issueTimestamp);    
+    const earningAddress = tm.getTransactionStateAddress(Method.ISSUE, transactionPayload.applicationId, transactionPayload.userId, issueTimestamp);
     const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');
     // console.log(`earningOnChain=${JSON.stringify(earningOnChain)}`);
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
@@ -196,7 +196,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       transactionType: Method.REVOKE,
       userId: user,
       applicationId: app,
-      amount: amounts[1],      
+      amount: amounts[1],
       description: descriptions[0] + '-revoke',
     };
     const revokeTimestamp: number = Math.floor(Date.now() / 1000);
@@ -211,8 +211,8 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
-    const earningAddress = tm.getTransactionStateAddress(Method.REVOKE, transactionPayload.applicationId, transactionPayload.userId, revokeTimestamp);    
-    const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');    
+    const earningAddress = tm.getTransactionStateAddress(Method.REVOKE, transactionPayload.applicationId, transactionPayload.userId, revokeTimestamp);
+    const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');
     // console.log(`revokeOnChain=${JSON.stringify(revokeOnChain)}`);
     const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
     // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
@@ -250,7 +250,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
       //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
-      return (timePassed > (waitTimeUntilOnChain*longerTestWaitMultiplier));
+      return (timePassed > (waitTimeUntilOnChain * longerTestWaitMultiplier));
     },              10000, 100);
 
     const balanceOnChain:WalletBalance = await tm.getBalanceByWallet(walletAddress);
@@ -405,7 +405,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
 
-  
+
   it('Successfully update mainchain transfer with settlement', async() => {
     /*
     const settlementTxHash = "0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e";
@@ -424,9 +424,9 @@ const settlementBlockNum = "3967331";
     await waitUntil(() => {
       const timePassed =  Math.floor(Date.now()) - timeOfStart;
       //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
-      return (timePassed > (waitTimeUntilOnChain*longerTestWaitMultiplier));
+      return (timePassed > (waitTimeUntilOnChain * longerTestWaitMultiplier));
     },              10000, 100);
-    
+
     const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
     const settleTransactionAddress = tm.getTransactionStateAddress(Method.SETTLE, app, user, Number(settlementTimestamp));
     const earningOnChain = await tm.addressLookup(settleTransactionAddress, 'TRANSACTION');
@@ -436,7 +436,7 @@ const settlementBlockNum = "3967331";
     // expect earning details to be correct
     expect(earningPropsAmount.div(1e18).toString()).to.be.equal('1');
     expect(earningOnChain.userId).to.be.equal(user);
-    expect(earningOnChain.applicationId).to.be.equal(app);    
+    expect(earningOnChain.applicationId).to.be.equal(app);
     expect(earningOnChain.timestamp.toString()).to.be.equal(settlementTimestamp.toString());
     expect(earningOnChain.type).to.be.equal(Method.SETTLE);
 
