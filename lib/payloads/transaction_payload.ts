@@ -3,9 +3,11 @@ interface TransactionPayload {
   transactionType: Method;
   userId: string;
   applicationId: string;
-  amount: number;  
+  amount: number;
   timestamp?: number;
   description: string;
+  adminDescription?: string;
+  fraudPeriod?: number;
 }
 
 export default TransactionPayload;
