@@ -8,6 +8,7 @@ interface TransactionPayload {
   description: string;
   adminDescription?: string;
   fraudPeriod?: number;
+  userDescription?: string;
 }
 
 export default TransactionPayload;
