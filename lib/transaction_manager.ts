@@ -52,16 +52,73 @@ interface IBalance {
   lastUpdateType: number;
   type: number;
 }
-
+/**
+ * @api WalletBalance WalletBalance
+ * @apiName WalletBalance
+ * @apiGroup Interfaces
+ * 
+ *
+ * @apiSuccessExample
+ * interface WalletBalance 
+ * {
+ *    wallet: string;
+ *    pending: string; // bigNumber
+ *    totalPending: string; // bigNumber
+ *    transferable: string; // bigNumber
+ *    bonded: string; // bigNumber
+ *    delegated: string; // bigNumber
+ *    delegatedTo: string; // address
+ *    total: string; // bigNumber = APP Power = totalPending + transferable + delegated
+ *    timestamp: number;
+ *    linkedWallet: string;
+ *    lastUpdateType: number;
+ *    type: number;
+ *  }
+ */
 interface WalletBalance extends IBalance {
   wallet: string;
 }
-
+/**
+ * @api ApplicationUser ApplicationUser
+ * @apiName ApplicationUser
+ * @apiGroup Interfaces
+ * 
+ *
+ * @apiSuccessExample
+ * interface ApplicationUser 
+ * {
+ *    userId: string;
+ *    applicationId: string;
+ *  }
+ */
 interface ApplicationUser {
   userId: string;
   applicationId: string;
 }
-
+/**
+ * @api AppUserBalance AppUserBalance
+ * @apiName AppUserBalance
+ * @apiGroup Interfaces
+ * 
+ *
+ * @apiSuccessExample
+ * interface ApplicationUserBalance 
+ * {
+ *    userId: string;
+ *    applicationId: string;
+ *    pending: string; // bigNumber
+ *    totalPending: string; // bigNumber
+ *    transferable: string; // bigNumber
+ *    bonded: string; // bigNumber
+ *    delegated: string; // bigNumber
+ *    delegatedTo: string; // address
+ *    total: string; // bigNumber = APP Power = totalPending + transferable + delegated
+ *    timestamp: number;
+ *    linkedWallet: string;
+ *    lastUpdateType: number;
+ *    type: number;
+ *  }
+ */
 interface AppUserBalance extends IBalance {
   applicationId: string;
   userId: string;
@@ -138,6 +195,17 @@ class TransactionManager {
     this.accumulateTransactions = false;
     this.transactions = [];
   }
+/**
+ * @api commitTransactions commitTransactions
+ * @apiDescription Submit transactions accumaleted when used with setAccumulateTransactions api
+ * @apiName commitTransactions
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ *
+ * @apiSuccessExample Promise<boolean>
+ * response from sidechain can be retrieved upon success with getSubmitResponse API
+ */
 
   async commitTransactions(privateKey): Promise<boolean> {
     if (this.transactions.length === 0) {
@@ -148,6 +216,16 @@ class TransactionManager {
     this.transactions = [];
     return ret;
   }
+
+  /**
+ * @api setAccumulateTransactions setAccumulateTransactions
+ * @apiDescription By turning this on you can create many transactions and later commit them with commitTransactions api
+ * @apiName setAccumulateTransactions
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {boolean} b Turn on or off. By default this is off.
+ *
+ */
   setAccumulateTransactions(b: boolean): void {
     this.accumulateTransactions = b;
   }
@@ -198,16 +276,49 @@ class TransactionManager {
     return TransactionManager.normalizeAddress(ethUtil.pubToAddress(signer.getPublicKey().asBytes(), true).toString('hex'));
   }
 
+/**
+ * @api signMessage signMessage
+ * @apiDescription Signs an Ethereum style message using web3 
+ * @apiName signMessage
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} msg Message to be signed
+ * @apiParam {string} address Address which belongs to this private key
+ * @apiParam {string} pk Private key used to sign the msg
+ *
+ * @apiSuccessExample string
+ * signature
+ */
   static async signMessage(msg: string, address: string, pk: string) {
     const privateKey = pk;
     const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
     const signed = account.sign(msg);
     return signed.signature;
   }
-
+/**
+ * @api recoverFromSignature recoverFromSignature
+ * @apiDescription Recovers the accountn address from the message signed and the signature
+ * @apiName recoverFromSignature
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} msg Message that was signed
+ * @apiParam {string} sig Signed message
+ *
+ * @apiSuccessExample string
+ * address
+ */
   static async recoverFromSignature(msg: string, sig: string) {
     return web3.eth.accounts.recover(msg, sig);
   }
+/**
+ * @api getLatestEthBlockId getLatestEthBlockId
+ * @apiDescription Retreive the last synched Ethereum block id
+ * @apiName getLatestEthBlockId
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiSuccessExample Promise<number>
+ * Etheruem block number
+ */
 
   async getLatestEthBlockId(): Promise<number> {
     const lastEthBlockIdAddress: string = this.getLastEthBlockStateAddress();
@@ -234,6 +345,18 @@ class TransactionManager {
       throw error;
     }
   }
+
+/**
+ * @api getLinkedWalletApplicationUsers getLinkedWalletApplicationUsers
+ * @apiDescription Get list of application user objects linked to a wallet link address
+ * @apiName getLinkedWalletApplicationUsers
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} walletLinkAddress The wallet link address on the sidechain can be calculated using getWalletLinkAddress API
+ *
+ * @apiSuccessExample Promise<ApplicationUser[]>
+ * .
+ */
 
   async getLinkedWalletApplicationUsers(walletLinkAddress: string): Promise<ApplicationUser[]> {
     const options = {
@@ -282,6 +405,18 @@ class TransactionManager {
     return totalPending.plus(transferable).plus(delegated).toString();
   }
 
+/**
+ * @api getBalanceByAppUser getBalanceByAppUser
+ * @apiDescription Get an application user balance object
+ * @apiName getBalanceByAppUser
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} applicationId
+ * @apiParam {string} userId
+ *
+ * @apiSuccessExample Promise<AppUserBalance>
+ * .
+ */
   async getBalanceByAppUser(applicationId: string, userId: string): Promise<AppUserBalance> {
     const balanceAddress: string = this.getBalanceStateAddress(applicationId, userId);
     const options = {
@@ -327,6 +462,17 @@ class TransactionManager {
     }
   }
 
+/**
+ * @api getBalanceByWallet getBalanceByWallet
+ * @apiDescription Get a wallet balance object
+ * @apiName getBalanceByWallet
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} wallet 
+ *
+ * @apiSuccessExample Promise<WalletBalance>
+ * .
+ */
   async getBalanceByWallet(wallet: string): Promise<WalletBalance> {
     const appUserBalance: AppUserBalance = await this.getBalanceByAppUser('', TransactionManager.normalizeAddress(wallet));
 
@@ -354,7 +500,21 @@ class TransactionManager {
   public getTransactionCountForCommit(): number {
     return this.transactions.length;
   }
-
+/**
+ * @api submitBalanceUpdateTransaction submitBalanceUpdateTransaction
+ * @apiDescription Submits an etheruem transfer balance update transaction to the sidechain
+ * @apiName submitBalanceUpdateTransaction
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {string} address Wallet address
+ * @apiParam {string} addressBalance Balance of the wallet address (BigNumber)
+ * @apiParam {string} txHash Ethereum transaction hash
+ * @apiParam {number} blockId Ethereum block number of the above transaction hash / balance update
+ * @apiParam {number} timestamp Ethereum block timestamp of the above transaction hash / balance update
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */
   public async submitBalanceUpdateTransaction(privateKey, _address: string, _addressBalance: string, txHash: string, blockId: number, timestamp: number):Promise<boolean> {
     const address = TransactionManager.normalizeAddress(_address);
     const normalizedTxHash = TransactionManager.normalizeAddress(txHash);
@@ -399,6 +559,18 @@ class TransactionManager {
     return true;
   }
 
+  /**
+ * @api submitRevokeTransaction submitRevokeTransaction
+ * @apiDescription Submits a revoke transaction to the sidechain
+ * @apiName submitRevokeTransaction
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {TransactionPayload[]} payloads Payload for revoke transaction
+ * @apiParam {number} timestamp Timestamp of the transaction
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */
   public async submitRevokeTransaction(privateKey, payloads:TransactionPayload[], timestamp: number):Promise<boolean> {
     this.requestTimestamp = TransactionManager.normalizeTimestamp(timestamp);
     const transactions = [];
@@ -411,6 +583,18 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
+/**
+ * @api submitIssueTransaction submitIssueTransaction
+ * @apiDescription Submits an issue transaction to the sidechain
+ * @apiName submitIssueTransaction
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {TransactionPayload[]} payloads Payload for issue transaction
+ * @apiParam {number} timestamp Timestamp of the transaction
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */
   public async submitIssueTransaction(privateKey, payloads:TransactionPayload[], timestamp: number):Promise<boolean> {
     this.requestTimestamp = TransactionManager.normalizeTimestamp(timestamp);
     const transactions = [];
@@ -423,6 +607,18 @@ class TransactionManager {
     return this.makeSubmitAPIRequest(batch);
   }
 
+ /**
+ * @api submitNewEthBlockIdTransaction submitNewEthBlockIdTransaction
+ * @apiDescription Submits the Ethereum blockId and timestamp which was lastly synched
+ * @apiName submitNewEthBlockIdTransaction
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {number} blockId Block number on Ethereum
+ * @apiParam {number} timestamp Timestamp of the last block id
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */ 
   public async submitNewEthBlockIdTransaction(privateKey, blockId: number, timestamp: number): Promise<boolean> {
     const transactions = [];
     transactions.push(this.getLastEthBlockTransaction(privateKey, blockId, timestamp));
@@ -435,7 +631,21 @@ class TransactionManager {
     return true;
   }
 
-  public async submitLinkWalletTransaction(privateKey, _address: string, applicationId: string, userId: string, signature: string) {
+/**
+ * @api submitLinkWalletTransaction submitLinkWalletTransaction
+ * @apiDescription Submits the wallet and signature to connect an application user to a wallet
+ * @apiName submitLinkWalletTransaction
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {string} address wallet address to link
+ * @apiParam {string} applicationId
+ * @apiParam {string} userId
+ * @apiParam {string} signature signature of applicationId_userId message
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */ 
+  public async submitLinkWalletTransaction(privateKey, _address: string, applicationId: string, userId: string, signature: string): Promise<boolean> {
     const address = TransactionManager.normalizeAddress(_address);
     const transactions = [];
     const appUser:ApplicationUser = {
@@ -462,7 +672,18 @@ class TransactionManager {
     return activity;
   }
 
-  public async submitActivityLog(privateKey, activityPayloads: ActivityPayload[]) {
+/**
+ * @api submitActivityLog submitActivityLog
+ * @apiDescription Submits a daily application user activity
+ * @apiName submitActivityLog
+ * @apiGroup TransactionManager
+ * 
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {ActivityPayload[]} activityPayloads wallet address to link
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */ 
+  public async submitActivityLog(privateKey, activityPayloads: ActivityPayload[]): Promise<boolean> {
     const transactions = [];
 
     for (let i = 0; i < activityPayloads.length; i += 1) {
@@ -476,6 +697,18 @@ class TransactionManager {
   public async statusLookup(batchUri: string): Promise<boolean> {
     return this.makeStatusAPIRequest(batchUri);
   }
+
+/**
+ * @api addressLookup addressLookup
+ * @apiDescription Get data stored at a specific sidechain state address
+ * @apiName addressLookup
+ * @apiGroup TransactionManager-Utils
+ * 
+ * @apiParam {string} address Sidechain state address
+ * @apiParam {string} type TRANSACTION | LASTETHBLOCK | BALANCE | WALLETLINK | ACTIVITY_LOG
+ * @apiSuccessExample Promise<any>
+ * The protobuffer representing the object
+ */ 
 
   public async addressLookup(address: string, type: string = 'TRANSACTION'): Promise<any> {
     const res: boolean = await this.makeAddressAPIRequest(address, type);

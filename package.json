@@ -17,6 +17,8 @@
     "tdd": "multi='mocha-osx-reporter=- spec=-' npm test -- --reporter mocha-multi -w",
     "cover": "nyc npm test",
     "doc": "apidoc -i lib/ -o public/doc/",
+    "publish-docs-staging": "npm run doc && aws s3 sync public/doc/. s3://props-staging-docs/transaction-manager --acl private --profile props-docs-staging && aws --profile props-docs-staging cloudfront create-invalidation --distribution-id EPFJEJGEN9QEX --paths /",
+    "publish-docs": "npm run doc && aws s3 sync public/doc/. s3://props-production-docs/transaction-manager --acl private --profile props-docs && aws --profile props-docs cloudfront create-invalidation --distribution-id E11G0B9Z3QXNJN --paths /",
     "wip": "mocha --compilers js:babel-register -w --",
     "watch:test": "npm test -- -w"
   },
