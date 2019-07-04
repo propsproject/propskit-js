@@ -19,6 +19,7 @@ const web3 = new Web3();
 
 import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
+import WalletLinkPayload from './payloads/wallet_link_payload';
 import { Balance } from './proto/balance_pb';
 import { LastEthBlock, Method, Params, RPCRequest } from './proto/payload_pb';
 import { WalletToUser } from './proto/users_pb';
@@ -56,10 +57,10 @@ interface IBalance {
  * @api WalletBalance WalletBalance
  * @apiName WalletBalance
  * @apiGroup Interfaces
- * 
+ *
  *
  * @apiSuccessExample
- * interface WalletBalance 
+ * interface WalletBalance
  * {
  *    wallet: string;
  *    pending: string; // bigNumber
@@ -82,10 +83,10 @@ interface WalletBalance extends IBalance {
  * @api ApplicationUser ApplicationUser
  * @apiName ApplicationUser
  * @apiGroup Interfaces
- * 
+ *
  *
  * @apiSuccessExample
- * interface ApplicationUser 
+ * interface ApplicationUser
  * {
  *    userId: string;
  *    applicationId: string;
@@ -99,10 +100,10 @@ interface ApplicationUser {
  * @api AppUserBalance AppUserBalance
  * @apiName AppUserBalance
  * @apiGroup Interfaces
- * 
+ *
  *
  * @apiSuccessExample
- * interface ApplicationUserBalance 
+ * interface ApplicationUserBalance
  * {
  *    userId: string;
  *    applicationId: string;
@@ -184,7 +185,7 @@ class TransactionManager {
 
     this.revokedAddresses = {};
     this.prefixes = {
-      transaction: createHash('sha512').update('pending-props:earnings:transaction').digest('hex').substring(0, 6),      
+      transaction: createHash('sha512').update('pending-props:earnings:transaction').digest('hex').substring(0, 6),
       balance: createHash('sha512').update('pending-props:earnings:balance').digest('hex').substring(0, 6),
       balanceUpdate: createHash('sha512').update('pending-props:earnings:bal-rtx').digest('hex').substring(0, 6),
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
@@ -200,7 +201,7 @@ class TransactionManager {
  * @apiDescription Submit transactions accumaleted when used with setAccumulateTransactions api
  * @apiName commitTransactions
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  *
  * @apiSuccessExample Promise<boolean>
@@ -222,7 +223,7 @@ class TransactionManager {
  * @apiDescription By turning this on you can create many transactions and later commit them with commitTransactions api
  * @apiName setAccumulateTransactions
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {boolean} b Turn on or off. By default this is off.
  *
  */
@@ -278,10 +279,10 @@ class TransactionManager {
 
 /**
  * @api signMessage signMessage
- * @apiDescription Signs an Ethereum style message using web3 
+ * @apiDescription Signs an Ethereum style message using web3
  * @apiName signMessage
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} msg Message to be signed
  * @apiParam {string} address Address which belongs to this private key
  * @apiParam {string} pk Private key used to sign the msg
@@ -300,7 +301,7 @@ class TransactionManager {
  * @apiDescription Recovers the accountn address from the message signed and the signature
  * @apiName recoverFromSignature
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} msg Message that was signed
  * @apiParam {string} sig Signed message
  *
@@ -315,7 +316,7 @@ class TransactionManager {
  * @apiDescription Retreive the last synched Ethereum block id
  * @apiName getLatestEthBlockId
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiSuccessExample Promise<number>
  * Etheruem block number
  */
@@ -351,7 +352,7 @@ class TransactionManager {
  * @apiDescription Get list of application user objects linked to a wallet link address
  * @apiName getLinkedWalletApplicationUsers
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} walletLinkAddress The wallet link address on the sidechain can be calculated using getWalletLinkAddress API
  *
  * @apiSuccessExample Promise<ApplicationUser[]>
@@ -410,7 +411,7 @@ class TransactionManager {
  * @apiDescription Get an application user balance object
  * @apiName getBalanceByAppUser
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} applicationId
  * @apiParam {string} userId
  *
@@ -467,8 +468,8 @@ class TransactionManager {
  * @apiDescription Get a wallet balance object
  * @apiName getBalanceByWallet
  * @apiGroup TransactionManager-Utils
- * 
- * @apiParam {string} wallet 
+ *
+ * @apiParam {string} wallet
  *
  * @apiSuccessExample Promise<WalletBalance>
  * .
@@ -505,7 +506,7 @@ class TransactionManager {
  * @apiDescription Submits an etheruem transfer balance update transaction to the sidechain
  * @apiName submitBalanceUpdateTransaction
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  * @apiParam {string} address Wallet address
  * @apiParam {string} addressBalance Balance of the wallet address (BigNumber)
@@ -547,7 +548,7 @@ class TransactionManager {
         authAddresses.push(this.getTransactionStateAddress(Method.SETTLE, applicationUsers[i].applicationId, applicationUsers[i].userId, balanceUpdateData.timestamp));
       }
     }
-    
+
 
     transactions.push(this.getBalanceUpdateTransaction(privateKey, balanceUpdateData,authAddresses));
     if (!this.accumulateTransactions) {
@@ -564,7 +565,7 @@ class TransactionManager {
  * @apiDescription Submits a revoke transaction to the sidechain
  * @apiName submitRevokeTransaction
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  * @apiParam {TransactionPayload[]} payloads Payload for revoke transaction
  * @apiParam {number} timestamp Timestamp of the transaction
@@ -588,7 +589,7 @@ class TransactionManager {
  * @apiDescription Submits an issue transaction to the sidechain
  * @apiName submitIssueTransaction
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  * @apiParam {TransactionPayload[]} payloads Payload for issue transaction
  * @apiParam {number} timestamp Timestamp of the transaction
@@ -612,13 +613,13 @@ class TransactionManager {
  * @apiDescription Submits the Ethereum blockId and timestamp which was lastly synched
  * @apiName submitNewEthBlockIdTransaction
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  * @apiParam {number} blockId Block number on Ethereum
  * @apiParam {number} timestamp Timestamp of the last block id
  * @apiSuccessExample Promise<boolean>
  * .
- */ 
+ */
   public async submitNewEthBlockIdTransaction(privateKey, blockId: number, timestamp: number): Promise<boolean> {
     const transactions = [];
     transactions.push(this.getLastEthBlockTransaction(privateKey, blockId, timestamp));
@@ -636,23 +637,22 @@ class TransactionManager {
  * @apiDescription Submits the wallet and signature to connect an application user to a wallet
  * @apiName submitLinkWalletTransaction
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
- * @apiParam {string} address wallet address to link
- * @apiParam {string} applicationId
- * @apiParam {string} userId
- * @apiParam {string} signature signature of applicationId_userId message
+ * @apiParam {WalletLinkPayload} payload
  * @apiSuccessExample Promise<boolean>
  * .
- */ 
-  public async submitLinkWalletTransaction(privateKey, _address: string, applicationId: string, userId: string, signature: string): Promise<boolean> {
-    const address = TransactionManager.normalizeAddress(_address);
+ */
+  public async submitLinkWalletTransaction(privateKey, payload: WalletLinkPayload): Promise<boolean> {
+    const address = TransactionManager.normalizeAddress(payload.address);
     const transactions = [];
     const appUser:ApplicationUser = {
-      applicationId,
-      userId,
+      applicationId: payload.applicationId,
+      userId: payload.userId,
     };
-    transactions.push(await this.getLinkWalletTransaction(privateKey, address, appUser, signature));
+
+    transactions.push(await this.getLinkWalletTransaction(privateKey, address, appUser, payload.signature));
+
     if (!this.accumulateTransactions) {
       const batch = this.getBatch(privateKey, transactions);
       return this.makeSubmitAPIRequest(batch);
@@ -677,12 +677,12 @@ class TransactionManager {
  * @apiDescription Submits a daily application user activity
  * @apiName submitActivityLog
  * @apiGroup TransactionManager
- * 
+ *
  * @apiParam {string} pk Private key used to sign the transactions for the sidechain
  * @apiParam {ActivityPayload[]} activityPayloads wallet address to link
  * @apiSuccessExample Promise<boolean>
  * .
- */ 
+ */
   public async submitActivityLog(privateKey, activityPayloads: ActivityPayload[]): Promise<boolean> {
     const transactions = [];
 
@@ -703,12 +703,12 @@ class TransactionManager {
  * @apiDescription Get data stored at a specific sidechain state address
  * @apiName addressLookup
  * @apiGroup TransactionManager-Utils
- * 
+ *
  * @apiParam {string} address Sidechain state address
  * @apiParam {string} type TRANSACTION | LASTETHBLOCK | BALANCE | WALLETLINK | ACTIVITY_LOG
  * @apiSuccessExample Promise<any>
  * The protobuffer representing the object
- */ 
+ */
 
   public async addressLookup(address: string, type: string = 'TRANSACTION'): Promise<any> {
     const res: boolean = await this.makeAddressAPIRequest(address, type);
@@ -870,7 +870,7 @@ class TransactionManager {
         .toLowerCase()
         .substring(0, 10);
 
-    return `${prefix}${part1}${part2}${part3}${part4}`;    
+    return `${prefix}${part1}${part2}${part3}${part4}`;
   }
 
   public getBalanceStateAddress(applicationId: string, userId: string): string {
@@ -935,7 +935,7 @@ class TransactionManager {
 
     return payload;
   }
-  
+
   private getTransactionPB(privateKey, transactionType: Method, payload: TransactionPayload, timestamp: number = 0) {
     const transaction = new Transaction();
     transaction.setType(transactionType);
@@ -1038,13 +1038,13 @@ class TransactionManager {
     return tx;
   }
   private async getTransaction(privateKey, transaction: Transaction) {
-    // prepare transaction        
+    // prepare transaction
     const params = new any.Any();
     params.setValue(transaction.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.Transaction');
     const rpcRequest = this.getRPCRequest(params, transaction.getType());
     const rpcRequestBytes = rpcRequest.serializeBinary();
-    const stateAddress = this.getTransactionStateAddress(transaction.getType(), transaction.getApplicationId(), transaction.getUserId(), transaction.getTimestamp());    
+    const stateAddress = this.getTransactionStateAddress(transaction.getType(), transaction.getApplicationId(), transaction.getUserId(), transaction.getTimestamp());
     const balanceAddress = this.getBalanceStateAddress(transaction.getApplicationId(), transaction.getUserId());
     const stateAddresses = [stateAddress, balanceAddress];
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
