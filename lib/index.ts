@@ -3,6 +3,7 @@ import { BalanceDetails } from './proto/balance_pb';
 import { Method } from './proto/payload_pb';
 import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
+import WalletLinkPayload from './payloads/wallet_link_payload';
 
 import * as propsclient from './client';
 import * as utils from './common';
@@ -16,7 +17,7 @@ class Props {
 
 export {
   TransactionManager,
-  TransactionPayload,  
+  TransactionPayload,
   SubmitAPIResponse,
   BatchDetailsTransaction,
   WalletBalance,
@@ -25,4 +26,5 @@ export {
   BalanceDetails,
   Props,
   Method,
+  WalletLinkPayload,
 };

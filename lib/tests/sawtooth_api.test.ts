@@ -13,6 +13,7 @@ const BigNumber = require('bignumber.js');
 BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
 import * as mocha from 'mocha';
 import { Method } from '../proto/payload_pb';
+import WalletLinkPayload from '../payloads/wallet_link_payload';
 
 let startTime = Math.floor(Date.now() / 1000);
 const amounts = [125, 50.5];
@@ -272,7 +273,14 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const user = 'user1';
     const sig = await TransactionManager.signMessage(`${app}_${user}`, walletAddress, pk);
     const tm:TransactionManager = new TransactionManager(options);
-    const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletAddress, app, user, sig);
+    const walletPayload: WalletLinkPayload = {
+      signature: sig,
+      applicationId: app,
+      address: walletAddress,
+      userId: user,
+    };
+
+    const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletPayload);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
     // wait a bit for it to be on chain
@@ -429,7 +437,7 @@ const settlementBlockNum = "3967331";
 
     const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
     const settleTransactionAddress = tm.getTransactionStateAddress(Method.SETTLE, app, user, Number(settlementTimestamp));
-    const earningOnChain = await tm.addressLookup(settleTransactionAddress, 'TRANSACTION');    
+    const earningOnChain = await tm.addressLookup(settleTransactionAddress, 'TRANSACTION');
     const earningPropsAmount = new BigNumber(earningOnChain.amount, 10);
     const expectedBalanceTotal = new BigNumber(settlementBalanceAtBlock, 10);
 
