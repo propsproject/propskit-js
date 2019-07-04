@@ -74,7 +74,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // execute tp now that sawtooth is ready
     const workingDir = process.cwd();
     console.log(`will wait for tp to be ready... executing: cd $GOPATH/src/github.com/propsproject/pending-props && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd ${workingDir}`);
-    exec(`cd $GOPATH/src/github.com/propsproject/pending-props && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd ${workingDir}`, (err, stdout, stderr) => {
+    exec(`cd $GOPATH/src/github.com/propsproject/props-transaction-processor && go run cmd/main.go -c -f ./configs/development.json  >> /tmp/out.log 2>> /tmp/out.log && cd ${workingDir}`, (err, stdout, stderr) => {
       if (err) {
         console.log(`node couldn't execute the command: ${err}`);
         return;
@@ -408,20 +408,20 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.transferable).to.be.equal(balanceAtBlock2);
     expect(userBalanceOnChain.userId).to.be.equal(user);
     expect(userBalanceOnChain.applicationId).to.be.equal(app);
-    expect(userBalanceOnChain.lastUpdateType).to.be.equal(0);
+    expect(userBalanceOnChain.lastUpdateType).to.be.equal(1);
     expect(userBalanceOnChain.type).to.be.equal(0);
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
   });
 
-
+/*
   it('Successfully update mainchain transfer with settlement', async() => {
-    /*
-    const settlementTxHash = "0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e";
-const settlementAmount = 1; // which is 1e18 = 1000000000000000000
-const settlementBalanceAtBlock = "428511433000000000000000";
-const settlementTimestamp = "1553107867";
-const settlementBlockNum = "3967331";
-*/
+
+    //const settlementTxHash = "0xd0dae165cd740518faf212781e4a707a738970c030d7a3b27f04109ca607447e";
+    //const settlementAmount = 1; // which is 1e18 = 1000000000000000000
+    //const settlementBalanceAtBlock = "428511433000000000000000";
+    //const settlementTimestamp = "1553107867";
+    //const settlementBlockNum = "3967331";
+
     const app = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';
     const user = 'user1';
     const tm:TransactionManager = new TransactionManager(options);
@@ -463,7 +463,7 @@ const settlementBlockNum = "3967331";
     expect(userBalanceOnChain.lastUpdateType).to.be.equal(0);
     expect(userBalanceOnChain.type).to.be.equal(0);
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
-  });
+  });*/
 
   // TODO - add more tests for error scenarios such as replaying the same transaction, last eth block smaller than current, bad signatures, etc.
 
