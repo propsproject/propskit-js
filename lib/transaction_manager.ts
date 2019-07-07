@@ -580,8 +580,13 @@ class TransactionManager {
       transactions.push(await this.getTransaction(privateKey, this.getTransactionPB(privateKey, payload_pb.Method.REVOKE,payloads[i])));
     }
 
-    const batch = this.getBatch(privateKey, transactions);
-    return this.makeSubmitAPIRequest(batch);
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
   }
 
 /**
@@ -604,8 +609,13 @@ class TransactionManager {
       transactions.push(await this.getTransaction(privateKey, this.getTransactionPB(privateKey, payload_pb.Method.ISSUE,payloads[i])));
     }
 
-    const batch = this.getBatch(privateKey, transactions);
-    return this.makeSubmitAPIRequest(batch);
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
   }
 
  /**
@@ -689,9 +699,14 @@ class TransactionManager {
     for (let i = 0; i < activityPayloads.length; i += 1) {
       transactions.push(await this.getActivityLogTransaction(privateKey, this.getActivityLogPB(activityPayloads[i])));
     }
-
-    const batch = this.getBatch(privateKey, transactions);
-    return this.makeSubmitAPIRequest(batch);
+  
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
   }
 
   public async statusLookup(batchUri: string): Promise<boolean> {

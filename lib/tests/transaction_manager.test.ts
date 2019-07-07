@@ -15,13 +15,13 @@ const expect = chai.expect;
 
 describe('Transaction Manager tests', async () => {
 
-  before(async () => {    
+  before(async () => {
 
   });
 
   const options = {
     familyName: 'pending-earnings',
-    familyVersion: '1.0',    
+    familyVersion: '1.0',
     host: '127.0.0.1',
     port: 8008,
   };
@@ -40,11 +40,11 @@ describe('Transaction Manager tests', async () => {
   //   // const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
   //   const userId: string = 'user1';
   //   const applicationId: string = 'app1';
-  //   const amount: number = 19.5;    
+  //   const amount: number = 19.5;
   //   const tm: TransactionManager = new TransactionManager(options);
   //   const issuePayload: IssuePayload = { userId, applicationId, amount, description: 'Broadcasting' };
   //   const res = await tm.submitIssueTransaction(pk, [issuePayload], ts);
-  //   console.log(`res=${res}`);    
+  //   console.log(`res=${res}`);
   // });
 
   it('Succesfully calculate a pending state address', async() => {
@@ -54,34 +54,43 @@ describe('Transaction Manager tests', async () => {
     const userId: string = 'user1';
     const applicationId: string = 'app1';
     const amount: number = 25;
-    const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';    
+    const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';
     const tm: TransactionManager = new TransactionManager(options);
     // const transactionPayload: TransactionPayload = { transactionType: Method.ISSUE, userId, applicationId, amount, description: 'Broadcasting' };
     const address: string = tm.getTransactionStateAddress(Method.ISSUE, applicationId, userId, ts);
-    expect(address).to.be.equal(expectedAddress);    
+    expect(address).to.be.equal(expectedAddress);
   });
 
-  it('Succesfully calculate a balance address', async() => {    
+  it('Succesfully calculate a balance address', async() => {
     const userId: string = 'user1';
     const applicationId: string = 'app1';
-    const expectedAddress: string = 'ec00a6458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55da92b7d9adeef';    
+    const expectedAddress: string = 'ec00a6458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55da92b7d9adeef';
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceStateAddress(applicationId, userId);
-    expect(address).to.be.equal(expectedAddress);    
+    expect(address).to.be.equal(expectedAddress);
   });
 
   it('Succesfully calculate an external balance update address', async() => {
-    const pk: string = privateKey;    
     const walletAddress: string = '0x2d4dcf292bc5bd8d7246099052dfc76b3cdd3524';
     const txHash: string = '0x0d4d80b54378376131e1ec60ee804fa58f0c33151cd340c8a971cca0a4033834';
-    const expectedAddress: string = '383dea0d48cbfe8b2c3253018ba70a80dc38029d1009146791f84fdf6953b3eda14f99';    
+    const expectedAddress: string = '383dea0d48cbfe8b2c3253018ba70a80dc38029d1009146791f84fdf6953b3eda14f99';
     const tm: TransactionManager = new TransactionManager(options);
     const address: string = tm.getBalanceUpdateAddress(txHash, walletAddress);
-    expect(address).to.be.equal(expectedAddress);    
+    expect(address).to.be.equal(expectedAddress);
+  });
+
+  it('Calculate an activity state address', async() => {
+    const appId = '0x2d4dcf292bc5bd8d7246099052dfc76b3cdd3524';
+    const userId = '100';
+    const date = 20190610;
+    const expectedAddress = '2ddf6c604b2e5d6791f84fdf643c30f73a3017050b287794fc8c5bb9ab06b9ce38a1fc';
+    const tm: TransactionManager = new TransactionManager(options);
+    const address: string = tm.getActivityLogAddress(date, userId, appId);
+    expect(address).to.be.equal(expectedAddress);
   });
 
   after(async () => {
-    
+
   });
 
 });

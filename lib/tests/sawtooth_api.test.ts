@@ -129,7 +129,6 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const activityAddress = tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
 
     const activityOnChain = await tm.addressLookup(activityAddress, 'ACTIVITY_LOG');
-    console.log('activityOnChain:' + JSON.stringify(activityOnChain));
     // expect earning details to be correct
     expect(activityOnChain.userId).to.be.equal(activityPayload.userId);
     expect(activityOnChain.applicationId).to.be.equal(activityPayload.applicationId);
@@ -411,6 +410,70 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.lastUpdateType).to.be.equal(1);
     expect(userBalanceOnChain.type).to.be.equal(0);
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
+  });
+
+  it('Check if accumulate transactions work as expected', async() => {
+    const tm: TransactionManager = new TransactionManager(options);
+
+    tm.setAccumulateTransactions(true);
+
+    const applicationId = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';
+    const userId = 'user1';
+
+    const activityPayload: ActivityPayload = {
+      applicationId,
+      userId,
+      timestamp: Math.floor(new Date().getTime() / 1000),
+      date: 20190807,
+    };
+
+    const sig = await TransactionManager.signMessage(`${applicationId}_${userId}`, walletAddress, pk);
+    const submitLinkWalletTransaction: WalletLinkPayload = {
+      userId,
+      applicationId,
+      address: walletAddress,
+      signature: sig,
+    };
+
+    const issueTransactionPayload: TransactionPayload = {
+      transactionType: Method.ISSUE,
+      userId,
+      applicationId,
+      amount: amounts[0],
+      description: descriptions[0],
+    };
+
+    const revokeTransactionPayload: TransactionPayload = {
+      transactionType: Method.REVOKE,
+      userId,
+      applicationId,
+      amount: amounts[0],
+      description: descriptions[0],
+    };
+
+    await tm.submitActivityLog(pkSawtooth, [activityPayload]);
+    // await tm.submitLinkWalletTransaction(pkSawtooth, submitLinkWalletTransaction);
+    // await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock, txHash, blockNum, timestamp)
+    // await tm.submitIssueTransaction(pkSawtooth, [issueTransactionPayload], issueTimestamp);
+    // await tm.submitIssueTransaction(pkSawtooth, [revokeTransactionPayload], issueTimestamp);
+    // await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId1, Math.floor(new Date().getTime() / 1000));
+
+    await tm.commitTransactions(pkSawtooth);
+
+    const timeOfStart = Math.floor(Date.now());
+    await waitUntil(() => {
+      const timePassed =  Math.floor(Date.now()) - timeOfStart;
+      console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      return (timePassed > waitTimeUntilOnChain);
+    }, 10000, 100);
+
+    const activityLogAddress = await tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
+    console.log(activityLogAddress);
+
+    const activityLookup = await tm.addressLookup(activityLogAddress, 'ACTIVITY_LOG');
+    console.log(activityLookup);
+
+    console.log(tm.getSubmitResponse());
   });
 
 /*
