@@ -14,6 +14,7 @@ BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
 import * as mocha from 'mocha';
 import { Method } from '../proto/payload_pb';
 import WalletLinkPayload from '../payloads/wallet_link_payload';
+const moment = require('moment');
 
 let startTime = Math.floor(Date.now() / 1000);
 const amounts = [125, 50.5];
@@ -108,10 +109,12 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
   it('Successfully log a single activity', async() => {
     const appId = 'younow';
     const userId = 'abcdefghijkl';
+    const date = moment().format('YYYYMMDD');
+
     const activityPayload: ActivityPayload = {
       userId,
       applicationId: appId,
-      date: 20190415,
+      date: date.toString(),
       timestamp: Math.floor(new Date().getTime() / 1000),
     };
 
@@ -129,11 +132,10 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const activityAddress = tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
 
     const activityOnChain = await tm.addressLookup(activityAddress, 'ACTIVITY_LOG');
-    console.log('activityOnChain:' + JSON.stringify(activityOnChain));
     // expect earning details to be correct
     expect(activityOnChain.userId).to.be.equal(activityPayload.userId);
     expect(activityOnChain.applicationId).to.be.equal(activityPayload.applicationId);
-    expect(activityOnChain.date).to.be.equal(activityPayload.date);
+    expect(activityOnChain.date.toString()).to.be.equal(activityPayload.date);
     expect(activityOnChain.timestamp).to.be.equal(activityPayload.timestamp);
 
   });
@@ -346,16 +348,30 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       amount: amounts[0],
       description: descriptions[0],
     };
+
+    const date = moment().format('YYYYMMDD');
+
+    const activityPayload: ActivityPayload = {
+      applicationId: app,
+      userId: 'user3',
+      timestamp: Math.floor(new Date().getTime() / 1000),
+      date,
+    };
+
     const issueTimestamp2 = Math.floor(Date.now() / 1000);
     const tm:TransactionManager = new TransactionManager(options);
     tm.setAccumulateTransactions(true);
-    const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [transactionPayload], issueTimestamp2);
     const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2, Math.floor(new Date().getTime() / 1000));
     const res3: boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock2, txHash2, blockNum2, timestamp2);
+    const res4: boolean = await tm.submitActivityLog(pkSawtooth, [activityPayload]);
+    const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [transactionPayload], issueTimestamp2);
     expect(res1).to.be.equal(true);
     expect(res2).to.be.equal(true);
     expect(res3).to.be.equal(true);
+    expect(res4).to.be.equal(true);
+
     const res: boolean = await tm.commitTransactions(pkSawtooth);
+
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
     // wait a bit for it to be on chain
@@ -366,11 +382,9 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     },              10000, 100);
     const lastEthBlockAddress = tm.getLastEthBlockStateAddress();
     const ethBlockOnChain = await tm.addressLookup(lastEthBlockAddress, 'LASTETHBLOCK');
-    // console.log(`ethBlockOnChain=${JSON.stringify(ethBlockOnChain)}`);
-    // expect last eth block to be correct
+
     expect(ethBlockOnChain.id).to.be.equal(lastEthBlockId2);
     const balanceOnChain:WalletBalance = await tm.getBalanceByWallet(walletAddress);
-    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
     const expectedBalanceTotal = new BigNumber(balanceAtBlock2, 10);
 
     // expect balance details to be correct
@@ -411,6 +425,13 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.lastUpdateType).to.be.equal(1);
     expect(userBalanceOnChain.type).to.be.equal(0);
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
+
+    // Expect activity be correct
+    const activityLogAddress = await tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
+    const activityLookup = await tm.addressLookup(activityLogAddress, 'ACTIVITY_LOG');
+    expect(activityLookup.userId).to.be.equal('user3');
+    expect(activityLookup.applicationId).to.be.equal(app);
+    expect(activityLookup.date.toString()).to.be.equal(date);
   });
 
 /*
