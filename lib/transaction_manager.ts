@@ -229,6 +229,7 @@ class TransactionManager {
  */
   setAccumulateTransactions(b: boolean): void {
     this.accumulateTransactions = b;
+    this.transactions = [];
   }
 
   httpPrefix(): string {
