@@ -270,6 +270,37 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(balanceOnChain.linkedWallet).to.be.equal('');
   });
 
+  it('Successfully settle from mainchain settlement event', async() => {
+    const tm:TransactionManager = new TransactionManager(options);
+    const app1 = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';
+    const user1 = '32f2be121e8b2efc4b04a45511412f60';
+    const user1Wallet = '0x2755ef71ec620348570bd8866045f97aca250ce1';    
+
+    const settlementTxHash = '0x5645a41ccc7c7a757831369677dc1bc39d9c58b1cd8541e2306cfbbb32da0054';
+    const settlementAmount = '5000000000000000000';
+    const settlementTimestamp = 1563692060;
+    const settlementBlockNum = 4770812;
+    const settlementApplicationRewardsAddress = '0xd8186f92ba7cc1991f6e3ab842cb50c29bbfdc6a';
+    const res:boolean = await tm.submitSettlementTransaction(pkSawtooth, app1, user1, settlementAmount, user1Wallet, settlementApplicationRewardsAddress, settlementTxHash, settlementBlockNum, settlementTimestamp);
+    expect(res).to.be.equal(true);
+    const timeOfStart = Math.floor(Date.now());
+    // wait a bit for it to be on chain
+    await waitUntil(() => {
+      const timePassed =  Math.floor(Date.now()) - timeOfStart;
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      return (timePassed > (waitTimeUntilOnChain * longerTestWaitMultiplier));
+    },              10000, 100);
+
+    const balanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app1, user1);
+    // console.log(`balanceOnChain=${JSON.stringify(balanceOnChain)}`);
+
+    // expect balance details to be correct
+    expect(balanceOnChain.pending).to.be.equal(`-${settlementAmount}`);
+    expect(balanceOnChain.totalPending).to.be.equal(`-${settlementAmount}`);
+    expect(balanceOnChain.transferable).to.be.equal('0');
+    expect(balanceOnChain.total).to.be.equal(`-${settlementAmount}`);        
+  });
+
   it('Successfully link app user to wallet', async() => {
     const app = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';
     const user = 'user1';
@@ -280,8 +311,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       applicationId: app,
       address: walletAddress,
       userId: user,
-    };
-
+    };    
     const res: boolean = await tm.submitLinkWalletTransaction(pkSawtooth, walletPayload);
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());

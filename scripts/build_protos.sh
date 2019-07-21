@@ -15,6 +15,7 @@ BALANCE_PROTO="${PROTOS_PATH}/balance.proto"
 EVENTS_PROTO="${PROTOS_PATH}/events.proto"
 PAYLOAD_PROTO="${PROTOS_PATH}/payload.proto"
 ACTIVITY_PROTO="${PROTOS_PATH}/activity.proto"
+REWARD_ENTITY_PROTO="${PROTOS_PATH}/reward_entities.proto"
 PROTO_PB_OUT="${CURRENT_DIR}/lib/proto"
 
 TEMP_DIR="${CURRENT_DIR}/temp"
@@ -35,6 +36,7 @@ protoc  \
     "${EVENTS_PROTO}" \
     "${PAYLOAD_PROTO}" \
     "${ACTIVITY_PROTO}" \
+    "${REWARD_ENTITY_PROTO}" \
     --ts_out="${PROTO_PB_OUT}"
 
 git clone "${SAWTOOTH_PROTOS_URL}"

@@ -68,6 +68,9 @@ export class BalanceUpdate extends jspb.Message {
   getTimestamp(): number;
   setTimestamp(value: number): void;
 
+  getFromAddress(): string;
+  setFromAddress(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BalanceUpdate.AsObject;
   static toObject(includeInstance: boolean, msg: BalanceUpdate): BalanceUpdate.AsObject;
@@ -85,6 +88,7 @@ export namespace BalanceUpdate {
     txHash: string,
     blockId: number,
     timestamp: number,
+    fromAddress: string,
   }
 }
 
@@ -112,6 +116,54 @@ export namespace LastEthBlock {
   }
 }
 
+export class SettlementData extends jspb.Message {
+  getApplicationId(): string;
+  setApplicationId(value: string): void;
+
+  getUserId(): string;
+  setUserId(value: string): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  getToAddress(): string;
+  setToAddress(value: string): void;
+
+  getFromAddress(): string;
+  setFromAddress(value: string): void;
+
+  getTxHash(): string;
+  setTxHash(value: string): void;
+
+  getBlockId(): number;
+  setBlockId(value: number): void;
+
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SettlementData.AsObject;
+  static toObject(includeInstance: boolean, msg: SettlementData): SettlementData.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SettlementData, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SettlementData;
+  static deserializeBinaryFromReader(message: SettlementData, reader: jspb.BinaryReader): SettlementData;
+}
+
+export namespace SettlementData {
+  export type AsObject = {
+    applicationId: string,
+    userId: string,
+    amount: string,
+    toAddress: string,
+    fromAddress: string,
+    txHash: string,
+    blockId: number,
+    timestamp: number,
+  }
+}
+
 export enum Method {
   ISSUE = 0,
   REVOKE = 1,
@@ -120,5 +172,7 @@ export enum Method {
   LAST_ETH_BLOCK_UPDATE = 4,
   WALLET_LINK = 5,
   ACTIVITY_LOG = 6,
+  REWARD_ENTITY_UPDATE = 7,
+  SETTLEMENT = 8,
 }
 

@@ -21,7 +21,7 @@ import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
 import WalletLinkPayload from './payloads/wallet_link_payload';
 import { Balance } from './proto/balance_pb';
-import { LastEthBlock, Method, Params, RPCRequest } from './proto/payload_pb';
+import { LastEthBlock, Method, Params, RPCRequest, SettlementData } from './proto/payload_pb';
 import { WalletToUser } from './proto/users_pb';
 import { Transaction } from './proto/transaction_pb';
 
@@ -191,6 +191,7 @@ class TransactionManager {
       blockIdUpdate: createHash('sha512').update('pending-props:earnings:lastethblock').digest('hex').substring(0, 6),
       walletLink: createHash('sha512').update('pending-props:earnings:walletl').digest('hex').substring(0, 6),
       activityLog: createHash('sha512').update('pending-props:earnings:activity_log').digest('hex').substring(0, 6),
+      settlement: createHash('sha512').update('pending-props:earnings:settlements').digest('hex').substring(0, 6),
     };
 
     this.accumulateTransactions = false;
@@ -502,6 +503,79 @@ class TransactionManager {
   public getTransactionCountForCommit(): number {
     return this.transactions.length;
   }
+
+/**
+ * @api submitSettlementTransaction submitSettlementTransaction
+ * @apiDescription Submits an etheruem settlement transactions to generate a settlement
+ * @apiName submitSettlementTransaction
+ * @apiGroup TransactionManager
+ *
+ * @apiParam {string} pk Private key used to sign the transactions for the sidechain
+ * @apiParam {string} applicationId
+ * @apiParam {string} userId
+ * @apiParam {string} amount (BigNumber)
+ * @apiParam {string} toAddress user's wallet address
+ * @apiParam {string} fromAddress application's rewards address
+ * @apiParam {string} txHash Ethereum transaction hash
+ * @apiParam {number} blockId Ethereum block number of the above transaction hash / balance update
+ * @apiParam {number} timestamp Ethereum block timestamp of the above transaction hash / balance update
+ * @apiSuccessExample Promise<boolean>
+ * .
+ */
+  public async submitSettlementTransaction(privateKey, _applicationId: string, _userId: string, _amount: string, _toAddress: string, _fromAddress: string, _txHash: string, _blockId: number, _timestamp: number):Promise<boolean> {
+    const transactions = [];
+    const applicationId = TransactionManager.normalizeAddress(_applicationId);
+    const toAddress = TransactionManager.normalizeAddress(_toAddress);
+    const fromAddress = TransactionManager.normalizeAddress(_fromAddress);
+    const normalizedTxHash = TransactionManager.normalizeAddress(_txHash);
+    const normalizedTimestamp = TransactionManager.normalizeTimestamp(_timestamp);  
+    const walletBalanceAddress: string = this.getBalanceStateAddress('', _toAddress);
+    const userBalanceAddress: string = this.getBalanceStateAddress(_applicationId, _userId);
+    const settlementTransactionAddress: string = this.getTransactionStateAddress(Method.SETTLE, _applicationId, _userId, _timestamp);
+    const settlementAddress: string = this.getSettlementStateAddress(_txHash);
+    
+    const settlementData: SettlementData = new payload_pb.SettlementData();
+    settlementData.setApplicationId(applicationId);
+    settlementData.setUserId(_userId);
+    settlementData.setAmount(_amount);
+    settlementData.setToAddress(toAddress)
+    settlementData.setFromAddress(fromAddress);
+    settlementData.setTxHash(normalizedTxHash);
+    settlementData.setBlockId(_blockId);
+    settlementData.setTimestamp(normalizedTimestamp);
+    
+    const authAddresses = [];
+    authAddresses.push(walletBalanceAddress);
+    authAddresses.push(userBalanceAddress);
+    authAddresses.push(settlementTransactionAddress);
+    authAddresses.push(settlementAddress);
+
+    const walletLinkAddress = this.getWalletLinkAddress(toAddress);
+    authAddresses.push(walletLinkAddress);
+    const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(applicationId, _userId);
+    if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
+      const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
+      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
+      authAddresses.push(walletLinkAddress);
+      authAddresses.push(walletBalanceAddress);
+      const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
+        if (applicationUsers[i].applicationId !== applicationId || applicationUsers[i].userId !== _userId) {
+          authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+        }
+      }
+    }
+
+    transactions.push(this.getSettlementTransaction(privateKey, settlementData, authAddresses));
+    if (!this.accumulateTransactions) {
+      const batch = this.getBatch(privateKey, transactions);
+      return this.makeSubmitAPIRequest(batch);
+    } else {
+      this.transactions = this.transactions.concat(transactions);
+    }
+    return true;
+  }
+
 /**
  * @api submitBalanceUpdateTransaction submitBalanceUpdateTransaction
  * @apiDescription Submits an etheruem transfer balance update transaction to the sidechain
@@ -889,6 +963,14 @@ class TransactionManager {
     return `${prefix}${part1}${part2}${part3}${part4}`;
   }
 
+  
+  public getSettlementStateAddress(txHash: string): string {
+    const prefix: string = this.prefixes['settlement'];
+    const postfix: string = createHash('sha512').update(`${txHash}`).digest('hex').toLowerCase().substring(0,64);    
+
+    return `${prefix}${postfix}`;
+  }
+
   public getBalanceStateAddress(applicationId: string, userId: string): string {
     const prefix: string = this.prefixes['balance'];
     const part1: string = createHash('sha512').update(`${applicationId}`).digest('hex').toLowerCase().substring(0,10);
@@ -1098,6 +1180,33 @@ class TransactionManager {
     return tx;
   }
 
+
+  private getSettlementTransaction(privateKey, settlementData: SettlementData, authAddresses: string[]) {
+    const params = new any.Any();
+    params.setValue(settlementData.serializeBinary());
+    params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.SettlementData');
+    const rpcRequest = this.getRPCRequest(params, payload_pb.Method.SETTLEMENT);
+    const rpcRequestBytes = rpcRequest.serializeBinary();
+
+    const transactionHeaderBytes = protobuf.TransactionHeader.encode({
+        familyName: this.familyName,
+        familyVersion: this.familyVersion,
+        inputs: [...authAddresses],
+        outputs: [...authAddresses],
+        signerPublicKey: TransactionManager.getPublicKey(privateKey),
+        batcherPublicKey: TransactionManager.getPublicKey(privateKey),
+        dependencies: [],
+        payloadSha512: createHash('sha512').update(rpcRequestBytes).digest('hex'),
+    }).finish();
+
+    const signature = TransactionManager.getSigner(privateKey).sign(transactionHeaderBytes);
+    const tx =  protobuf.Transaction.create({
+      header: transactionHeaderBytes,
+      headerSignature: signature,
+      payload: rpcRequestBytes,
+    });
+    return tx;
+  }
 
   private getBalanceUpdateTransaction(privateKey, balanceUpdateData: BalanceUpdate, authAddresses: string[]) {
     const balanceUpdate = new payload_pb.BalanceUpdate();

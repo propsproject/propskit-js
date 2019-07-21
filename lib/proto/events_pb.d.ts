@@ -6,6 +6,7 @@ import * as payload_pb from "./payload_pb";
 import * as balance_pb from "./balance_pb";
 import * as users_pb from "./users_pb";
 import * as transaction_pb from "./transaction_pb";
+import * as reward_entities_pb from "./reward_entities_pb";
 
 export class TransactionEvent extends jspb.Message {
   hasTransaction(): boolean;
@@ -167,6 +168,32 @@ export namespace WalletUnlinkedEvent {
   }
 }
 
+export class RewardEntityUpdateEvent extends jspb.Message {
+  hasEntity(): boolean;
+  clearEntity(): void;
+  getEntity(): reward_entities_pb.RewardEntity | undefined;
+  setEntity(value?: reward_entities_pb.RewardEntity): void;
+
+  getMessage(): string;
+  setMessage(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RewardEntityUpdateEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: RewardEntityUpdateEvent): RewardEntityUpdateEvent.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RewardEntityUpdateEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RewardEntityUpdateEvent;
+  static deserializeBinaryFromReader(message: RewardEntityUpdateEvent, reader: jspb.BinaryReader): RewardEntityUpdateEvent;
+}
+
+export namespace RewardEntityUpdateEvent {
+  export type AsObject = {
+    entity?: reward_entities_pb.RewardEntity.AsObject,
+    message: string,
+  }
+}
+
 export enum EventType {
   EARNINGISSUED = 0,
   EARNINGREVOKED = 1,
@@ -176,5 +203,6 @@ export enum EventType {
   WALLETLINKED = 5,
   WALLETUNLINKED = 6,
   TRANSACTIONADDED = 7,
+  REWARDENTITYUPDATED = 8,
 }
 
