@@ -1,6 +1,6 @@
 {
   "name": "propskit",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "Library containing classes to work with the sidechain",
   "main": "dist/index.js",
   "scripts": {

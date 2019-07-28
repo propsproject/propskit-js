@@ -795,7 +795,7 @@ class TransactionManager {
  * @apiGroup TransactionManager-Utils
  *
  * @apiParam {string} address Sidechain state address
- * @apiParam {string} type TRANSACTION | LASTETHBLOCK | BALANCE | WALLETLINK | ACTIVITY_LOG
+ * @apiParam {string} type TRANSACTION | LASTETHBLOCK | BALANCE | WALLETLINK | ACTIVITY_LOG | SETTLEMENT | BALANCE_UPDATE
  * @apiSuccessExample Promise<any>
  * The protobuffer representing the object
  */
@@ -870,6 +870,14 @@ class TransactionManager {
             break;
           case 'ACTIVITY_LOG':
             dataObject = new activity_pb.ActivityLog.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;
+          case 'SETTLEMENT':
+            dataObject = new payload_pb.SettlementData.deserializeBinary(bytes);
+            ret = (dataObject.toObject());
+            break;
+          case 'BALANCE_UPDATE':
+            dataObject = new payload_pb.BalanceUpdate.deserializeBinary(bytes);
             ret = (dataObject.toObject());
             break;
         }
