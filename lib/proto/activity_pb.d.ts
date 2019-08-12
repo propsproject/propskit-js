@@ -2,6 +2,7 @@
 // file: activity.proto
 
 import * as jspb from "google-protobuf";
+import * as balance_pb from "./balance_pb";
 
 export class ActivityLog extends jspb.Message {
   getUserId(): string;
@@ -15,6 +16,11 @@ export class ActivityLog extends jspb.Message {
 
   getTimestamp(): number;
   setTimestamp(value: number): void;
+
+  hasBalance(): boolean;
+  clearBalance(): void;
+  getBalance(): balance_pb.Balance | undefined;
+  setBalance(value?: balance_pb.Balance): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ActivityLog.AsObject;
@@ -32,6 +38,7 @@ export namespace ActivityLog {
     applicationId: string,
     date: number,
     timestamp: number,
+    balance?: balance_pb.Balance.AsObject,
   }
 }
 

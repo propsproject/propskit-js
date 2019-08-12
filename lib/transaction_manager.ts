@@ -139,6 +139,8 @@ interface TransactionManagerOptions {
   https?: boolean;
   host?: string;
   port?: number;
+  rewardsStartTimestamp?: number;
+  secondsInDay?: number;
 }
 
 
@@ -150,6 +152,8 @@ class TransactionManager {
   https: boolean;
   host: string;
   port: number;
+  rewardsStartTimestamp: number;
+  secondsInDay: number;
 
   lastStateData: string[];
   revokedAddresses: any;
@@ -182,6 +186,8 @@ class TransactionManager {
     }
     this.host = _.isUndefined(options.host) ? '127.0.0.1' : options.host;
     this.port = _.isUndefined(options.port) ? 8008 : options.port;
+    this.rewardsStartTimestamp = _.isUndefined(options.rewardsStartTimestamp) ? 1562803200 : options.rewardsStartTimestamp;
+    this.secondsInDay = _.isUndefined(options.secondsInDay) ? 86400 : options.secondsInDay;
 
     this.revokedAddresses = {};
     this.prefixes = {
@@ -241,8 +247,8 @@ class TransactionManager {
     return this.httpPrefix() + this.host + ':' + this.port + '/batches';
   }
 
-  stateAddressUrl(stateAddress: string) {
-    return this.httpPrefix() + this.host + ':' + this.port + '/state?address=' + stateAddress;
+  stateAddressUrl(stateAddress: string, count: number = 200) {
+    return this.httpPrefix() + this.host + ':' + this.port + '/state?address=' + stateAddress + '&limit=' + count;
   }
 
   static normalizeAddress(str: string): string {
@@ -552,6 +558,8 @@ class TransactionManager {
 
     const walletLinkAddress = this.getWalletLinkAddress(toAddress);
     authAddresses.push(walletLinkAddress);
+    const activityLogAddress = this.getActivityLogAddress(this.calcRewardsDay(settlementData.getTimestamp()), settlementData.getUserId(), settlementData.getApplicationId());
+    authAddresses.push(activityLogAddress);
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(applicationId, _userId);
     if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
       const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
@@ -562,6 +570,8 @@ class TransactionManager {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== applicationId || applicationUsers[i].userId !== _userId) {
           authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+          const activityLogAddress = this.getActivityLogAddress(this.calcRewardsDay(settlementData.getTimestamp()), applicationUsers[i].userId, applicationUsers[i].applicationId);
+          authAddresses.push(activityLogAddress);
         }
       }
     }
@@ -609,7 +619,7 @@ class TransactionManager {
     authAddresses.push(balanceUpdateAddress);
 
     const walletLinkAddress = this.getWalletLinkAddress(address);
-    authAddresses.push(walletLinkAddress);
+    authAddresses.push(walletLinkAddress);    
     let applicationUsers:ApplicationUser[] = [];
     try {
       applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
@@ -621,6 +631,7 @@ class TransactionManager {
         authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
         // also add the settle transaction address incase a settle would be needed
         authAddresses.push(this.getTransactionStateAddress(Method.SETTLE, applicationUsers[i].applicationId, applicationUsers[i].userId, balanceUpdateData.timestamp));
+        authAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(balanceUpdateData.timestamp), applicationUsers[i].userId, applicationUsers[i].applicationId));
       }
     }
 
@@ -800,8 +811,8 @@ class TransactionManager {
  * The protobuffer representing the object
  */
 
-  public async addressLookup(address: string, type: string = 'TRANSACTION'): Promise<any> {
-    const res: boolean = await this.makeAddressAPIRequest(address, type);
+  public async addressLookup(address: string, type: string = 'TRANSACTION', asArray: boolean = false, count: number = 100): Promise<any> {
+    const res: boolean = await this.makeAddressAPIRequest(address, type, asArray, count);
 
     if (res) {
       return this.lastStateData;
@@ -837,53 +848,70 @@ class TransactionManager {
     }
   }
 
-  private async makeAddressAPIRequest(stateAddress: string, type: string): Promise<boolean> {
+  private async makeAddressAPIRequest(stateAddress: string, type: string, asArray: boolean = false, count: number = 100): Promise<boolean> {
     const options = {
       method: 'GET',
-      uri: this.stateAddressUrl(stateAddress),
+      uri: this.stateAddressUrl(stateAddress, count),
     };
 
     try {
-      const resStr = await rp(options);
-      const res = JSON.parse(resStr);
-      const data = res.data;
+      const retItems = [];
+      let nextPage = true;
       let ret;
-      let dataObject;
-      data.forEach((element) => {
-        const bytes = new Uint8Array(Buffer.from(element.data, 'base64'));
-        switch (type) {
-          case 'TRANSACTION':
-            dataObject = new transaction_pb.Transaction.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'LASTETHBLOCK':
-            dataObject = new payload_pb.LastEthBlock.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'BALANCE':
-            dataObject = new balance_pb.Balance.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'WALLETLINK':
-            dataObject = new users_pb.WalletToUser.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'ACTIVITY_LOG':
-            dataObject = new activity_pb.ActivityLog.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'SETTLEMENT':
-            dataObject = new payload_pb.SettlementData.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
-          case 'BALANCE_UPDATE':
-            dataObject = new payload_pb.BalanceUpdate.deserializeBinary(bytes);
-            ret = (dataObject.toObject());
-            break;
+      while (nextPage) {
+        const resStr = await rp(options);
+        const res = JSON.parse(resStr);        
+        const data = res.data;        
+        let dataObject;
+        data.forEach((element) => {
+          ret = null;
+          const bytes = new Uint8Array(Buffer.from(element.data, 'base64'));
+          switch (type) {
+            case 'TRANSACTION':
+              dataObject = new transaction_pb.Transaction.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+            case 'LASTETHBLOCK':
+              dataObject = new payload_pb.LastEthBlock.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+            case 'BALANCE':
+              dataObject = new balance_pb.Balance.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+            case 'WALLETLINK':
+              dataObject = new users_pb.WalletToUser.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+            case 'ACTIVITY_LOG':
+              dataObject = new activity_pb.ActivityLog.deserializeBinary(bytes);
+              ret = (dataObject.toObject());              
+              break;
+            case 'SETTLEMENT':
+              dataObject = new payload_pb.SettlementData.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+            case 'BALANCE_UPDATE':
+              dataObject = new payload_pb.BalanceUpdate.deserializeBinary(bytes);
+              ret = (dataObject.toObject());
+              break;
+          }
+          if (ret != null) {
+            retItems.push(ret);
+          }
+          
+        });
+        if ('paging' in res && res.paging.next != null) {
+          options.uri = res.paging.next;
+        } else {
+          nextPage = false;
         }
-      });
-
-      this.lastStateData = ret;
+      }
+      if (asArray) {
+        this.lastStateData = retItems;
+      } else {
+        this.lastStateData = ret;
+      }      
       return true;
     } catch (error) {
       throw error;
@@ -1010,9 +1038,24 @@ class TransactionManager {
     return `${prefix}${postfix}`;
   }
 
-  public getActivityLogAddress(date: number, userId: string, appId: string): string {
+  public getApplicationActivityLogDailyAddress(rewardsDay: number, appId: string) {
     const prefix: string = this.prefixes['activityLog'];
 
+    const part1 = createHash('sha512')
+      .update(rewardsDay.toString())
+      .digest('hex')
+      .toLowerCase()
+      .substring(0, 8);
+    const part2 = createHash('sha512')
+      .update(appId)
+      .digest('hex')
+      .toLowerCase()
+      .substring(0, 10);    
+    return `${prefix}${part1}${part2}`;
+  }
+  
+  public getActivityLogAddress(date: number, userId: string, appId: string): string {
+    const prefix: string = this.prefixes['activityLog'];    
     const part1 = createHash('sha512')
       .update(date.toString())
       .digest('hex')
@@ -1063,15 +1106,18 @@ class TransactionManager {
     applicationUser.setUserId(appUser.userId);
     applicationUser.setApplicationId(appUser.applicationId);
     applicationUser.setSignature(sig);
-    applicationUser.setTimestamp(moment().unix());
+    const timestamp: number = moment().unix();
+    applicationUser.setTimestamp(timestamp);
     walletToUser.addUsers(applicationUser);
     const authAddresses = [];
     const walletLinkAddress = this.getWalletLinkAddress(address);
     const walletBalanceAddress = this.getBalanceStateAddress('', address);
     const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
+    const activityAddress = this.getActivityLogAddress(this.calcRewardsDay(timestamp), appUser.userId, appUser.applicationId);
     authAddresses.push(walletLinkAddress);
     authAddresses.push(walletBalanceAddress);
     authAddresses.push(userBalanceAddress);
+    authAddresses.push(activityAddress);
     let applicationUsers:ApplicationUser[] = [];
     try {
       applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
@@ -1082,6 +1128,7 @@ class TransactionManager {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
           authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+          authAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(timestamp), applicationUsers[i].userId, applicationUsers[i].applicationId));
         }
       }
     }
@@ -1152,18 +1199,21 @@ class TransactionManager {
     const rpcRequestBytes = rpcRequest.serializeBinary();
     const stateAddress = this.getTransactionStateAddress(transaction.getType(), transaction.getApplicationId(), transaction.getUserId(), transaction.getTimestamp());
     const balanceAddress = this.getBalanceStateAddress(transaction.getApplicationId(), transaction.getUserId());
-    const stateAddresses = [stateAddress, balanceAddress];
+    const activityAddress = this.getActivityLogAddress(this.calcRewardsDay(transaction.getTimestamp()), transaction.getUserId(), transaction.getApplicationId());
+    // console.log(`****** activityAddress = ${activityAddress}, rewardsDay = ${this.calcRewardsDay(transaction.getTimestamp())}`);
+    const stateAddresses = [stateAddress, balanceAddress, activityAddress];
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(transaction.getApplicationId(), transaction.getUserId());
     if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
       const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
-      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
+      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);      
       stateAddresses.push(walletLinkAddress);
-      stateAddresses.push(walletBalanceAddress);
+      stateAddresses.push(walletBalanceAddress);      
       const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== transaction.getApplicationId() || applicationUsers[i].userId !== transaction.getUserId()) {
           stateAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+          stateAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(transaction.getTimestamp()), applicationUsers[i].userId, applicationUsers[i].applicationId));
         }
       }
     }
@@ -1250,7 +1300,7 @@ class TransactionManager {
     return tx;
   }
 
-  private getActivityLogTransaction(privateKey: string, activityLogTransactionPB: any) {
+  private async getActivityLogTransaction(privateKey: string, activityLogTransactionPB: any) {
 
     // const hashToSign = createHash('sha512')
     //   .update(activityLogTransactionPB.serializeBinary())
@@ -1265,7 +1315,27 @@ class TransactionManager {
     const rpcRequest = this.getRPCRequest(params, payload_pb.Method.ACTIVITY_LOG);
     const rpcRequestBytes = rpcRequest.serializeBinary();
 
-    const stateAddresses = [this.getLastEthBlockStateAddress(), this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId())];
+    const stateAddresses = [];
+    stateAddresses.push(this.getLastEthBlockStateAddress());
+    stateAddresses.push(this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId()));
+    stateAddresses.push(this.getBalanceStateAddress(activityLogTransactionPB.getApplicationId(), activityLogTransactionPB.getUserId()));
+    
+    // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
+    const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(activityLogTransactionPB.getApplicationId(), activityLogTransactionPB.getUserId());
+    if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
+      const walletBalanceAddress = this.getBalanceStateAddress('', appUserBalance.linkedWallet);
+      const walletLinkAddress = this.getWalletLinkAddress(appUserBalance.linkedWallet);
+      stateAddresses.push(walletLinkAddress);
+      stateAddresses.push(walletBalanceAddress);
+      const applicationUsers:ApplicationUser[] = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+      for (let i = 0; i < applicationUsers.length; i = i + 1) {
+        if (applicationUsers[i].applicationId !== activityLogTransactionPB.getApplicationId() || applicationUsers[i].userId !== activityLogTransactionPB.getUserId()) {
+          stateAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));          
+        }
+      }
+    }
+
+
 
     const transactionHeaderBytes = protobuf.TransactionHeader.encode({
       familyName: this.familyName,
@@ -1289,6 +1359,11 @@ class TransactionManager {
 
   static getPublicKey(privateKey): string {
     return TransactionManager.getSigner(privateKey).getPublicKey().asHex();
+  }
+
+  calcRewardsDay(timestamp: number): number {
+    const secondsSinceRewardsStartTimestamp = timestamp - this.rewardsStartTimestamp;    
+    return Math.floor(secondsSinceRewardsStartTimestamp / this.secondsInDay) + 1;
   }
 
   getSubmitResponse(): SubmitAPIResponse {

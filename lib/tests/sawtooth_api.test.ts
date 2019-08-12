@@ -51,6 +51,8 @@ const options = {
   familyVersion: '1.0',
   host: '127.0.0.1',
   port: 8008,
+  rewardsStartTimestamp: 1561248000,
+  secondsInDay: 120,  
 };
 
 const earningAddresses: string[] = [];
@@ -109,12 +111,12 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
   it('Successfully log a single activity', async() => {
     const appId = 'younow';
     const userId = 'abcdefghijkl';
-    const date = moment().format('YYYYMMDD');
+    const day = 1;
 
     const activityPayload: ActivityPayload = {
       userId,
       applicationId: appId,
-      date: date.toString(),
+      date: day,
       timestamp: Math.floor(new Date().getTime() / 1000),
     };
 
@@ -135,9 +137,56 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // expect earning details to be correct
     expect(activityOnChain.userId).to.be.equal(activityPayload.userId);
     expect(activityOnChain.applicationId).to.be.equal(activityPayload.applicationId);
-    expect(activityOnChain.date.toString()).to.be.equal(activityPayload.date);
+    expect(activityOnChain.date.toString()).to.be.equal(activityPayload.date.toString());
     expect(activityOnChain.timestamp).to.be.equal(activityPayload.timestamp);
 
+  });
+
+  it('Successfully log multiple activities and fetch them with paging', async() => {    
+    const day = 2;
+
+    const activityPayload: ActivityPayload = {
+      userId: '',
+      applicationId: '',
+      date: day,
+      timestamp: Math.floor(new Date().getTime() / 1000),
+    };
+    
+    const applicationUserIds = [{ userId: 'vnslv', appId: 'app1' },{ userId: 'sdf32', appId: 'app1' },{ userId: 'gsdg2', appId: 'app1' },{ userId: 'dsf9ss', appId: 'app1' },
+    { userId: 'fsd2ds', appId: 'app1' }, { userId: 'woeur9', appId: 'app2' }, { userId: 'sfi832', appId: 'app2' }];
+
+    const applicationUserLookup = {};
+    for (let i:number = 0; i < applicationUserIds.length; i += 1) {
+      applicationUserLookup[applicationUserIds[i].appId + '_' + applicationUserIds[i].userId] = i;
+    }
+
+    const tm:TransactionManager = new TransactionManager(options);
+    for (let i:number = 0; i < applicationUserIds.length; i += 1) {
+      activityPayload.userId = applicationUserIds[i].userId;
+      activityPayload.applicationId = applicationUserIds[i].appId;
+      const res: boolean = await tm.submitActivityLog(pkSawtooth, [activityPayload]);
+      expect(res).to.be.equal(true);
+    }
+    
+
+    const timeOfStart = Math.floor(Date.now());
+    await waitUntil(() => {
+      const timePassed =  Math.floor(Date.now()) - timeOfStart;
+      //   console.log(`waiting for transaction ${ Math.floor(Date.now() / 1000) - timeOfStart}...`);
+      return (timePassed > waitTimeUntilOnChain);
+    },              10000, 100);
+
+    const app1ActivityAddress = tm.getApplicationActivityLogDailyAddress(day, 'app1');
+    // const app2ActivityAddress = tm.getApplicationActivityLogDailyAddress(day, 'app2');
+
+    const activityOnChain = await tm.addressLookup(app1ActivityAddress, 'ACTIVITY_LOG', true, 2);
+    for (let j:number = 0; j < activityOnChain.length; j += 1) {
+      const appUserKey: string = activityOnChain[j].applicationId + '_' + activityOnChain[j].userId;
+      expect(applicationUserIds[applicationUserLookup[appUserKey]].userId).to.be.equal(activityOnChain[j].userId);
+      expect(applicationUserIds[applicationUserLookup[appUserKey]].appId).to.be.equal(activityOnChain[j].applicationId);
+      expect(activityOnChain[j].date).to.be.equal(activityPayload.date);
+      expect(activityOnChain[j].timestamp).to.be.equal(activityPayload.timestamp);
+    }    
   });
 
   it('Successfully issue an earning', async() => {
@@ -369,7 +418,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
   });
 
   it('Successfully submit multiple transactions with batch', async() => {
-    const app = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';
+    const app = '0xa80a6946f8af393d422cd6feee9040c25121a3b8';                 
     const user = 'user1';
     const transactionPayload: TransactionPayload = {
       transactionType: Method.ISSUE,
@@ -379,19 +428,21 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       description: descriptions[0],
     };
 
-    const date = moment().format('YYYYMMDD');
+    const tm:TransactionManager = new TransactionManager(options);
+    const activityTimestamp = moment().unix();
+    const rewardsDay = tm.calcRewardsDay(activityTimestamp);
 
     const activityPayload: ActivityPayload = {
       applicationId: app,
       userId: 'user3',
-      timestamp: Math.floor(new Date().getTime() / 1000),
-      date,
+      timestamp: activityTimestamp,
+      date: rewardsDay,
     };
 
     const issueTimestamp2 = Math.floor(Date.now() / 1000);
-    const tm:TransactionManager = new TransactionManager(options);
+    
     tm.setAccumulateTransactions(true);
-    const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2, Math.floor(new Date().getTime() / 1000));
+    const res2: boolean = await tm.submitNewEthBlockIdTransaction(pkSawtooth, lastEthBlockId2, activityTimestamp);
     const res3: boolean = await tm.submitBalanceUpdateTransaction(pkSawtooth, walletAddress, balanceAtBlock2, txHash2, blockNum2, timestamp2);
     const res4: boolean = await tm.submitActivityLog(pkSawtooth, [activityPayload]);
     const res1: boolean = await tm.submitIssueTransaction(pkSawtooth, [transactionPayload], issueTimestamp2);
@@ -418,9 +469,9 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const expectedBalanceTotal = new BigNumber(balanceAtBlock2, 10);
 
     // expect balance details to be correct
-    const balanceOnChainTotalPending = new BigNumber(balanceOnChain.totalPending, 10);
+    // const balanceOnChainTotalPending = new BigNumber(balanceOnChain.totalPending, 10);
     expect(balanceOnChain.pending).to.be.equal('0');
-    expect(balanceOnChainTotalPending.div(1e18).toString()).to.be.equal(((2 * amounts[0]) - amounts[1]).toString());
+    expect(balanceOnChain.totalPending).to.be.equal('0');
     expect(balanceOnChain.transferable).to.be.equal(balanceAtBlock2);
     expect(balanceOnChain.wallet).to.be.equal(walletAddress);
     expect(balanceOnChain.lastUpdateType).to.be.equal(1);
@@ -431,6 +482,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const earningOnChain = await tm.addressLookup(earningAddress, 'TRANSACTION');
     const earningPropsAmount = new BigNumber(earningOnChain.amount, 10);
     const userBalanceOnChain: AppUserBalance = await tm.getBalanceByAppUser(app, user);
+    // console.log(`userBalanceOnChain=${JSON.stringify(userBalanceOnChain)}`);
     const balancePendingAmount = new BigNumber(userBalanceOnChain.pending, 10);
     const balanceTotalPendingAmount = new BigNumber(userBalanceOnChain.totalPending, 10);
     const balanceTotalAmount = new BigNumber(userBalanceOnChain.total, 10);
@@ -461,7 +513,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const activityLookup = await tm.addressLookup(activityLogAddress, 'ACTIVITY_LOG');
     expect(activityLookup.userId).to.be.equal('user3');
     expect(activityLookup.applicationId).to.be.equal(app);
-    expect(activityLookup.date.toString()).to.be.equal(date);
+    expect(activityLookup.date.toString()).to.be.equal(rewardsDay.toString());
   });
 
 /*

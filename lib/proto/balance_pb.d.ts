@@ -78,6 +78,9 @@ export class Balance extends jspb.Message {
   getLinkedWallet(): string;
   setLinkedWallet(value: string): void;
 
+  getBalanceUpdateIndex(): number;
+  setBalanceUpdateIndex(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Balance.AsObject;
   static toObject(includeInstance: boolean, msg: Balance): Balance.AsObject;
@@ -96,6 +99,7 @@ export namespace Balance {
     preCutoffDetails?: BalanceDetails.AsObject,
     type: BalanceType,
     linkedWallet: string,
+    balanceUpdateIndex: number,
   }
 }
 
@@ -107,5 +111,6 @@ export enum BalanceType {
 export enum UpdateType {
   PENDING_PROPS_BALANCE = 0,
   PROPS_BALANCE = 1,
+  WALLET_LINK_BALANCE = 2,
 }
 
