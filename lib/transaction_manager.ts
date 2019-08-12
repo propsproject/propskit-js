@@ -52,6 +52,7 @@ interface IBalance {
   linkedWallet: string;
   lastUpdateType: number;
   type: number;
+  balanceUpdateIndex: number;
 }
 /**
  * @api WalletBalance WalletBalance
@@ -457,6 +458,7 @@ class TransactionManager {
           linkedWallet: balance.getLinkedWallet(),
           lastUpdateType: balance.getBalanceDetails().getLastUpdateType(),
           type: balance.getType(),
+          balanceUpdateIndex: balance.getBalanceUpdateIndex(),
         };
       });
 
@@ -498,6 +500,7 @@ class TransactionManager {
       linkedWallet: appUserBalance.linkedWallet,
       lastUpdateType: appUserBalance.lastUpdateType,
       type: appUserBalance.type,
+      balanceUpdateIndex: appUserBalance.balanceUpdateIndex,
     };
     return walletBalance;
   }
