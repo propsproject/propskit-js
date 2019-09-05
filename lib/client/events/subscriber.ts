@@ -1,7 +1,7 @@
 // tslint:disable:readonly-keyword member-access array-type readonly-array no-object-mutation
 import { ClientEventsSubscribeRequest } from '../../sawtooth-sdk-ts/client_event_pb';
 import { EventFilter, EventList, EventSubscription } from '../../sawtooth-sdk-ts/events_pb';
-import { decodeBalanceEvent, decodeBlockCommit, decodeTransactionEvent, decodeWalletLinkedEvent } from './serializers';
+import { decodeBalanceEvent, decodeBlockCommit, decodeTransactionEvent, decodeWalletLinkedEvent, decodeStateDelta } from './serializers';
 import { Stream } from './stream';
 
 export type EventHandle = (e : any) => void;
@@ -55,6 +55,7 @@ export class Subscriber {
   constructor(public readonly validator : string, public onConnectHandle : any, public onDisconnectHandle : any, public onError : any) {
     this.decoders[EventTypes.transaction] = decodeTransactionEvent;
     this.decoders[EventTypes.blockCommit] = decodeBlockCommit;
+    this.decoders[EventTypes.stateDelta] = decodeStateDelta;
     this.decoders[EventTypes.balance] = decodeBalanceEvent;
     this.decoders[EventTypes.walletLinked] = decodeWalletLinkedEvent;
     this.stream = new Stream(validator, () => this.onConnectHandle(this), () => this.onDisconnectHandle(this), this.processEvtList.bind(this));
@@ -128,6 +129,15 @@ export class Subscriber {
   public subscribeBlocks(callback : any) : Subscriber {
     const subscription: EventSubscription = new EventSubscription();
     subscription.setEventType(EventTypes.blockCommit);
+    this.deltas[subscription.getEventType()] = callback;
+    return this
+      .addSubscription(subscription)
+      .sendSubscribeRequest();
+  }
+
+  public subscribeDeltas(callback : any) : Subscriber {
+    const subscription: EventSubscription = new EventSubscription();
+    subscription.setEventType(EventTypes.stateDelta);
     this.deltas[subscription.getEventType()] = callback;
     return this
       .addSubscription(subscription)

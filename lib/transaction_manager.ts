@@ -383,6 +383,7 @@ class TransactionManager {
       data.forEach((entry) => {
         const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
         const walletToUser: WalletToUser = new users_pb.WalletToUser.deserializeBinary(bytes);
+        console.log(`walletToUser=${JSON.stringify(walletToUser.toObject())}`);
         const walletToUserList =  walletToUser.getUsersList();
         for (let i = 0; i < walletToUserList.length; i = i + 1) {
           const appUser: ApplicationUser = {
@@ -1114,6 +1115,7 @@ class TransactionManager {
     walletToUser.addUsers(applicationUser);
     const authAddresses = [];
     const walletLinkAddress = this.getWalletLinkAddress(address);
+    console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
     const walletBalanceAddress = this.getBalanceStateAddress('', address);
     const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
     const activityAddress = this.getActivityLogAddress(this.calcRewardsDay(timestamp), appUser.userId, appUser.applicationId);
@@ -1127,6 +1129,7 @@ class TransactionManager {
     } catch (error) {
       // do nothing
     }
+    console.log(`applicationUsers=${JSON.stringify(applicationUsers)}`);
     if (applicationUsers.length > 0) {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
@@ -1135,7 +1138,8 @@ class TransactionManager {
         }
       }
     }
-
+    console.log(`authAddresses=${JSON.stringify(authAddresses)}`);
+    process.exit(1);
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.WalletToUser');

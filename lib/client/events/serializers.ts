@@ -1,5 +1,59 @@
 import { BalanceEvent, TransactionEvent } from '../../proto/events_pb';
 import { Event } from '../../sawtooth-sdk-ts/events_pb';
+import { StateChangeList, StateChange } from '../../sawtooth-sdk-ts/transaction_receipt_pb';
+const payload_pb = require('../../proto/payload_pb');
+const balance_pb = require('../../proto/balance_pb');
+const users_pb = require('../../proto/users_pb');
+const transaction_pb = require('../../proto/transaction_pb');
+const activity_pb = require('../../proto/activity_pb');
+
+
+export const stateAddressDataToJSONObject = (bytes: any) : any => {  
+  const changeEvent = StateChangeList.deserializeBinary(bytes);  
+  const changeList = changeEvent.getStateChangesList();
+  const returnObj = {};
+  returnObj['changes'] = [];
+  for (let i:number = 0; i < changeList.length; i += 1) {
+    const stateAddress: string = changeList[i].getAddress();
+    const data:Uint8Array = changeList[i].getValue_asU8();
+    const type: string = changeList[i].getType() === StateChange.Type.SET ? 'SET' : 'DELETE';
+    const prefix = stateAddress.substr(0,6);  
+    let pb;
+    switch (prefix) {
+      case '8d7eed':
+        pb = new payload_pb.LastEthBlock.deserializeBinary(data); 
+        returnObj['changes'].push({ stateAddress, type, dataType: 'LastEthBlock', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case '2ddf6c':
+        pb = new activity_pb.ActivityLog.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'ActivityLog', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case '383dea':
+        pb = new payload_pb.BalanceUpdate.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'BalanceUpdate', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case '4de48f':
+        pb = new payload_pb.SettlementData.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'SettlementData', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case 'ec00a6':
+        pb = new balance_pb.Balance.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'Balance', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case '23659c':
+        pb = new users_pb.WalletToUser.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'WalletToUser', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      case 'bd88c6':
+        pb = new transaction_pb.Transaction.deserializeBinary(data);
+        returnObj['changes'].push({ stateAddress, type, dataType: 'Transaction', dataValue: type === 'SET' ? pb.toObject() : {} });
+        break;
+      default: 
+        ;
+    }
+  }
+  return returnObj;
+};
 
 export class DecodedTransactionEvent {
     /**
@@ -67,10 +121,10 @@ export class DecodedBlockCommit {
 }
 
 /**
- * Decodes an earning event adding top level entries into an about for all data
+ * Decodes a block commit event adding top level entries into an about for all data
  *
- * @param {Event} e earning event that will be decoded
- * @returns {DecodedEarningEvent}
+ * @param {Event} e block commit event that will be decoded
+ * @returns {DecodedBlockCommit}
  */
 export const decodeBlockCommit = (e : Event) : DecodedBlockCommit => {
   const block = e
@@ -83,6 +137,20 @@ export const decodeBlockCommit = (e : Event) : DecodedBlockCommit => {
 
   // tslint:disable-next-line:no-string-literal
   return new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
+};
+
+export const decodeStateDelta = (e : Event) : any => {
+  // const eventAttributes = e
+  //   .getAttributesList()
+  //   .reduce((prev, curr) => {
+  //     // tslint:disable-next-line:no-object-mutation
+  //     prev[curr.getKey()] = curr.getValue();
+  //     return prev;
+  //   },      {});
+    
+  return stateAddressDataToJSONObject(e.getData_asU8());
+  // tslint:disable-next-line:no-string-literal  
+  // return { eventAttributes, data:e.getData() };// new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
 };
 
 // tslint:disable-next-line:max-classes-per-file
