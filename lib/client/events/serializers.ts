@@ -22,33 +22,34 @@ export const stateAddressDataToJSONObject = (bytes: any) : any => {
     switch (prefix) {
       case '8d7eed':
         pb = new payload_pb.LastEthBlock.deserializeBinary(data); 
-        returnObj['changes'].push({ stateAddress, type, dataType: 'LastEthBlock', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'LastEthBlock', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case '2ddf6c':
         pb = new activity_pb.ActivityLog.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'ActivityLog', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'ActivityLog', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case '383dea':
         pb = new payload_pb.BalanceUpdate.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'BalanceUpdate', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'BalanceUpdate', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case '4de48f':
         pb = new payload_pb.SettlementData.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'SettlementData', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'SettlementData', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case 'ec00a6':
         pb = new balance_pb.Balance.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'Balance', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'Balance', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case '23659c':
         pb = new users_pb.WalletToUser.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'WalletToUser', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'WalletToUser', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       case 'bd88c6':
         pb = new transaction_pb.Transaction.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'Transaction', dataValue: type === 'SET' ? pb.toObject() : {} });
+        returnObj['changes'].push({ stateAddress, type, dataType: 'Transaction', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
         break;
       default: 
+        returnObj['changes'].push({ stateAddress, type, dataType: 'Unknown', dataValue: {}, rawValue: changeList[i].getValue_asB64() });
         ;
     }
   }

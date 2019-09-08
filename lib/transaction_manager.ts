@@ -1058,24 +1058,24 @@ class TransactionManager {
     return `${prefix}${part1}${part2}`;
   }
   
-  public getActivityLogAddress(date: number, userId: string, appId: string): string {
+  public getActivityLogAddress(userId: string, appId: string): string {
     const prefix: string = this.prefixes['activityLog'];    
-    const part1 = createHash('sha512')
-      .update(date.toString())
-      .digest('hex')
-      .toLowerCase()
-      .substring(0, 8);
+    // const part1 = createHash('sha512')
+    //   .update(date.toString())
+    //   .digest('hex')
+    //   .toLowerCase()
+    //   .substring(0, 8);
     const part2 = createHash('sha512')
       .update(appId)
       .digest('hex')
       .toLowerCase()
-      .substring(0, 10);
+      .substring(0, 16);
     const part3 = createHash('sha512')
       .update(userId)
       .digest('hex')
       .toLowerCase()
-      .substring(0,46);
-    return `${prefix}${part1}${part2}${part3}`;
+      .substring(0,48);
+    return `${prefix}${part2}${part3}`;
   }
 
   private getRPCRequest(params, method) {
