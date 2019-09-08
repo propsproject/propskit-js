@@ -562,7 +562,7 @@ class TransactionManager {
 
     const walletLinkAddress = this.getWalletLinkAddress(toAddress);
     authAddresses.push(walletLinkAddress);
-    const activityLogAddress = this.getActivityLogAddress(this.calcRewardsDay(settlementData.getTimestamp()), settlementData.getUserId(), settlementData.getApplicationId());
+    const activityLogAddress = this.getActivityLogAddress(settlementData.getUserId(), settlementData.getApplicationId());
     authAddresses.push(activityLogAddress);
     const appUserBalance:AppUserBalance = await this.getBalanceByAppUser(applicationId, _userId);
     if (appUserBalance !== null && 'linkedWallet' in appUserBalance && appUserBalance.linkedWallet.length > 0) {
@@ -574,7 +574,7 @@ class TransactionManager {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== applicationId || applicationUsers[i].userId !== _userId) {
           authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
-          const activityLogAddress = this.getActivityLogAddress(this.calcRewardsDay(settlementData.getTimestamp()), applicationUsers[i].userId, applicationUsers[i].applicationId);
+          const activityLogAddress = this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId);
           authAddresses.push(activityLogAddress);
         }
       }
@@ -635,7 +635,7 @@ class TransactionManager {
         authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
         // also add the settle transaction address incase a settle would be needed
         authAddresses.push(this.getTransactionStateAddress(Method.SETTLE, applicationUsers[i].applicationId, applicationUsers[i].userId, balanceUpdateData.timestamp));
-        authAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(balanceUpdateData.timestamp), applicationUsers[i].userId, applicationUsers[i].applicationId));
+        authAddresses.push(this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId));
       }
     }
 
@@ -1118,7 +1118,7 @@ class TransactionManager {
     console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
     const walletBalanceAddress = this.getBalanceStateAddress('', address);
     const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
-    const activityAddress = this.getActivityLogAddress(this.calcRewardsDay(timestamp), appUser.userId, appUser.applicationId);
+    const activityAddress = this.getActivityLogAddress(appUser.userId, appUser.applicationId);
     authAddresses.push(walletLinkAddress);
     authAddresses.push(walletBalanceAddress);
     authAddresses.push(userBalanceAddress);
@@ -1134,7 +1134,7 @@ class TransactionManager {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
           authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
-          authAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(timestamp), applicationUsers[i].userId, applicationUsers[i].applicationId));
+          authAddresses.push(this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId));
         }
       }
     }
@@ -1206,7 +1206,7 @@ class TransactionManager {
     const rpcRequestBytes = rpcRequest.serializeBinary();
     const stateAddress = this.getTransactionStateAddress(transaction.getType(), transaction.getApplicationId(), transaction.getUserId(), transaction.getTimestamp());
     const balanceAddress = this.getBalanceStateAddress(transaction.getApplicationId(), transaction.getUserId());
-    const activityAddress = this.getActivityLogAddress(this.calcRewardsDay(transaction.getTimestamp()), transaction.getUserId(), transaction.getApplicationId());
+    const activityAddress = this.getActivityLogAddress(transaction.getUserId(), transaction.getApplicationId());
     // console.log(`****** activityAddress = ${activityAddress}, rewardsDay = ${this.calcRewardsDay(transaction.getTimestamp())}`);
     const stateAddresses = [stateAddress, balanceAddress, activityAddress];
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
@@ -1220,7 +1220,7 @@ class TransactionManager {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== transaction.getApplicationId() || applicationUsers[i].userId !== transaction.getUserId()) {
           stateAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
-          stateAddresses.push(this.getActivityLogAddress(this.calcRewardsDay(transaction.getTimestamp()), applicationUsers[i].userId, applicationUsers[i].applicationId));
+          stateAddresses.push(this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId));
         }
       }
     }
@@ -1324,7 +1324,7 @@ class TransactionManager {
 
     const stateAddresses = [];
     stateAddresses.push(this.getLastEthBlockStateAddress());
-    stateAddresses.push(this.getActivityLogAddress(activityLogTransactionPB.getDate(), activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId()));
+    stateAddresses.push(this.getActivityLogAddress(activityLogTransactionPB.getUserId(), activityLogTransactionPB.getApplicationId()));
     stateAddresses.push(this.getBalanceStateAddress(activityLogTransactionPB.getApplicationId(), activityLogTransactionPB.getUserId()));
     
     // get state addresses for walletLinkAddress, and other balances object that may need to update if linked:
