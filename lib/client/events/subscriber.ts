@@ -3,6 +3,7 @@ import { ClientEventsSubscribeRequest } from '../../sawtooth-sdk-ts/client_event
 import { EventFilter, EventList, EventSubscription } from '../../sawtooth-sdk-ts/events_pb';
 import { decodeBalanceEvent, decodeBlockCommit, decodeTransactionEvent, decodeWalletLinkedEvent, decodeStateDelta } from './serializers';
 import { Stream } from './stream';
+const _ = require('lodash');
 
 export type EventHandle = (e : any) => void;
 export type ErrCallback = (e : Error) => void;
@@ -91,15 +92,49 @@ export class Subscriber {
     return filter;
   };
 
+  // Parse Block Commit Event
+  public getBlock(events: any[]) {        
+    for (let i: number = 0; i < events.length; i += 1) {
+      if (events[i]['array'][0] === EventTypes.blockCommit) {
+        return {
+          blockNum: parseInt(events[i]['array'][1][1][1]),
+          blockId: events[i]['array'][1][0][1],
+          stateRootHash: events[i]['array'][1][2][1],
+        };        
+      }
+    }
+    
+    
+    // const block = _.chain(events)
+    //   .find(e => e.eventType === 'sawtooth/block-commit')
+    //   .get('attributes')
+    //   .map(a => [a.key, a.value])
+    //   .fromPairs()
+    //   .value()
+
+    // return {
+    //   blockNum: parseInt(block.block_num),
+    //   blockId: block.block_id,
+    //   stateRootHash: block.state_root_hash
+    // }
+  }
+
   /**
    * Process an {EventList} decoding each {EarningEvent} and invoking the callback on each
    *
    * @param {EventList} events event list object that will have each event decoded
    */
   public processEvtList(events : EventList) : void {
+    // if there's a new block event in the list add the data to the other events
+    const blockData = this.getBlock(events.getEventsList());    
     events.getEventsList().reduce((prev, curr) => {
       try {
-        const event = this.decoders[curr.getEventType()](curr);
+        let event;
+        if (curr.getEventType() == EventTypes.stateDelta) {
+          event =  this.decoders[curr.getEventType()](curr, blockData);
+        } else {
+          event = this.decoders[curr.getEventType()](curr);
+        }        
         prev.push({
           event,
           event_type: curr.getEventType(),
@@ -110,8 +145,8 @@ export class Subscriber {
         return prev;
       }
     },
-      []).forEach((e) => {
-        this.deltas[e.event_type](e);
+      []).forEach((e) => {        
+        this.deltas[e.event_type](e);        
       });
   }
 

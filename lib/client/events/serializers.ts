@@ -6,10 +6,11 @@ const balance_pb = require('../../proto/balance_pb');
 const users_pb = require('../../proto/users_pb');
 const transaction_pb = require('../../proto/transaction_pb');
 const activity_pb = require('../../proto/activity_pb');
+const _ = require('lodash');
 
 
-export const stateAddressDataToJSONObject = (bytes: any) : any => {  
-  const changeEvent = StateChangeList.deserializeBinary(bytes);  
+export const stateAddressDataToJSONObject = (bytes: any, blockData: any) : any => {  
+  const changeEvent = StateChangeList.deserializeBinary(bytes);    
   const changeList = changeEvent.getStateChangesList();
   const returnObj = {};
   returnObj['changes'] = [];
@@ -19,40 +20,44 @@ export const stateAddressDataToJSONObject = (bytes: any) : any => {
     const type: string = changeList[i].getType() === StateChange.Type.SET ? 'SET' : 'DELETE';
     const prefix = stateAddress.substr(0,6);  
     let pb;
+    let obj;
     switch (prefix) {
       case '8d7eed':
         pb = new payload_pb.LastEthBlock.deserializeBinary(data); 
-        returnObj['changes'].push({ stateAddress, type, dataType: 'LastEthBlock', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'LastEthBlock', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };        
         break;
       case '2ddf6c':
         pb = new activity_pb.ActivityLog.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'ActivityLog', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'ActivityLog', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       case '383dea':
         pb = new payload_pb.BalanceUpdate.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'BalanceUpdate', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'BalanceUpdate', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       case '4de48f':
         pb = new payload_pb.SettlementData.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'SettlementData', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'SettlementData', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       case 'ec00a6':
         pb = new balance_pb.Balance.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'Balance', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'Balance', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       case '23659c':
         pb = new users_pb.WalletToUser.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'WalletToUser', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'WalletToUser', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       case 'bd88c6':
         pb = new transaction_pb.Transaction.deserializeBinary(data);
-        returnObj['changes'].push({ stateAddress, type, dataType: 'Transaction', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'Transaction', dataValue: type === 'SET' ? pb.toObject() : {}, rawValue: changeList[i].getValue_asB64() };
         break;
       default: 
-        returnObj['changes'].push({ stateAddress, type, dataType: 'Unknown', dataValue: {}, rawValue: changeList[i].getValue_asB64() });
+        obj = { stateAddress, type, dataType: 'Unknown', dataValue: {}, rawValue: changeList[i].getValue_asB64() };
         ;
     }
+    
+    returnObj['changes'].push(_.merge(obj, blockData));
   }
+
   return returnObj;
 };
 
@@ -140,16 +145,16 @@ export const decodeBlockCommit = (e : Event) : DecodedBlockCommit => {
   return new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
 };
 
-export const decodeStateDelta = (e : Event) : any => {
+export const decodeStateDelta = (e : Event, blockData: any) : any => {
   // const eventAttributes = e
   //   .getAttributesList()
   //   .reduce((prev, curr) => {
   //     // tslint:disable-next-line:no-object-mutation
   //     prev[curr.getKey()] = curr.getValue();
   //     return prev;
-  //   },      {});
-    
-  return stateAddressDataToJSONObject(e.getData_asU8());
+  //   },      {});    
+  console.log(`************* decodeStateDelta = ${JSON.stringify(blockData)}`);
+  return stateAddressDataToJSONObject(e.getData_asU8(), blockData);
   // tslint:disable-next-line:no-string-literal  
   // return { eventAttributes, data:e.getData() };// new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);
 };
