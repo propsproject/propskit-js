@@ -79,15 +79,15 @@ describe('Transaction Manager tests', async () => {
     expect(address).to.be.equal(expectedAddress);
   });
 
-  it('Calculate an activity state address', async() => {
-    const appId = '0x2d4dcf292bc5bd8d7246099052dfc76b3cdd3524';
-    const userId = '100';
-    const date = 20190610;
-    const expectedAddress = '2ddf6c604b2e5d6791f84fdf643c30f73a3017050b287794fc8c5bb9ab06b9ce38a1fc';
-    const tm: TransactionManager = new TransactionManager(options);
-    const address: string = tm.getActivityLogAddress(date, userId, appId);
-    expect(address).to.be.equal(expectedAddress);
-  });
+  // it('Calculate an activity state address', async() => {
+  //   const appId = '0x2d4dcf292bc5bd8d7246099052dfc76b3cdd3524';
+  //   const userId = '100';
+  //   const date = 20190610;
+  //   const expectedAddress = '2ddf6c604b2e5d6791f84fdf643c30f73a3017050b287794fc8c5bb9ab06b9ce38a1fc';
+  //   const tm: TransactionManager = new TransactionManager(options);
+  //   const address: string = tm.getActivityLogAddress(date, userId, appId);
+  //   expect(address).to.be.equal(expectedAddress);
+  // });
 
   after(async () => {
 

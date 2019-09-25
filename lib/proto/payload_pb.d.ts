@@ -141,6 +141,9 @@ export class SettlementData extends jspb.Message {
   getTimestamp(): number;
   setTimestamp(value: number): void;
 
+  getOnchainBalance(): string;
+  setOnchainBalance(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SettlementData.AsObject;
   static toObject(includeInstance: boolean, msg: SettlementData): SettlementData.AsObject;
@@ -161,6 +164,7 @@ export namespace SettlementData {
     txHash: string,
     blockId: number,
     timestamp: number,
+    onchainBalance: string,
   }
 }
 

@@ -152,8 +152,7 @@ export const decodeStateDelta = (e : Event, blockData: any) : any => {
   //     // tslint:disable-next-line:no-object-mutation
   //     prev[curr.getKey()] = curr.getValue();
   //     return prev;
-  //   },      {});    
-  console.log(`************* decodeStateDelta = ${JSON.stringify(blockData)}`);
+  //   },      {});      
   return stateAddressDataToJSONObject(e.getData_asU8(), blockData);
   // tslint:disable-next-line:no-string-literal  
   // return { eventAttributes, data:e.getData() };// new DecodedBlockCommit(block['block_id'], block['block_num'], block['state_root_hash'], block['previous_block_id']);

@@ -131,7 +131,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
       return (timePassed > waitTimeUntilOnChain);
     },              10000, 100);
 
-    const activityAddress = tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
+    const activityAddress = tm.getActivityLogAddress(activityPayload.userId, activityPayload.applicationId);
 
     const activityOnChain = await tm.addressLookup(activityAddress, 'ACTIVITY_LOG');
     // expect earning details to be correct
@@ -330,7 +330,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     const settlementTimestamp = 1563692060;
     const settlementBlockNum = 4770812;
     const settlementApplicationRewardsAddress = '0xd8186f92ba7cc1991f6e3ab842cb50c29bbfdc6a';
-    const res:boolean = await tm.submitSettlementTransaction(pkSawtooth, app1, user1, settlementAmount, user1Wallet, settlementApplicationRewardsAddress, settlementTxHash, settlementBlockNum, settlementTimestamp);
+    const res:boolean = await tm.submitSettlementTransaction(pkSawtooth, app1, user1, settlementAmount, user1Wallet, settlementApplicationRewardsAddress, settlementTxHash, settlementBlockNum, settlementTimestamp, '25000000000000000000');
     expect(res).to.be.equal(true);
     const timeOfStart = Math.floor(Date.now());
     // wait a bit for it to be on chain
@@ -346,8 +346,8 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     // expect balance details to be correct
     expect(balanceOnChain.pending).to.be.equal(`-${settlementAmount}`);
     expect(balanceOnChain.totalPending).to.be.equal(`-${settlementAmount}`);
-    expect(balanceOnChain.transferable).to.be.equal('0');
-    expect(balanceOnChain.total).to.be.equal(`-${settlementAmount}`);        
+    expect(balanceOnChain.transferable).to.be.equal('25000000000000000000');
+    // expect(balanceOnChain.total).to.be.equal(`-${settlementAmount}`);        
   });
 
   it('Successfully link app user to wallet', async() => {
@@ -509,7 +509,7 @@ describe('Transaction Manager interacting with Sawtooth side chain tests', async
     expect(userBalanceOnChain.linkedWallet).to.be.equal(walletAddress);
 
     // Expect activity be correct
-    const activityLogAddress = await tm.getActivityLogAddress(activityPayload.date, activityPayload.userId, activityPayload.applicationId);
+    const activityLogAddress = await tm.getActivityLogAddress(activityPayload.userId, activityPayload.applicationId);
     const activityLookup = await tm.addressLookup(activityLogAddress, 'ACTIVITY_LOG');
     expect(activityLookup.userId).to.be.equal('user3');
     expect(activityLookup.applicationId).to.be.equal(app);

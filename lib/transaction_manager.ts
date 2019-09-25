@@ -529,10 +529,11 @@ class TransactionManager {
  * @apiParam {string} txHash Ethereum transaction hash
  * @apiParam {number} blockId Ethereum block number of the above transaction hash / balance update
  * @apiParam {number} timestamp Ethereum block timestamp of the above transaction hash / balance update
+ * @apiParam {string} toAddress balance (BigNumber)
  * @apiSuccessExample Promise<boolean>
  * .
  */
-  public async submitSettlementTransaction(privateKey, _applicationId: string, _userId: string, _amount: string, _toAddress: string, _fromAddress: string, _txHash: string, _blockId: number, _timestamp: number):Promise<boolean> {
+  public async submitSettlementTransaction(privateKey, _applicationId: string, _userId: string, _amount: string, _toAddress: string, _fromAddress: string, _txHash: string, _blockId: number, _timestamp: number, _toBalance: string):Promise<boolean> {
     const transactions = [];
     const applicationId = TransactionManager.normalizeAddress(_applicationId);
     const toAddress = TransactionManager.normalizeAddress(_toAddress);
@@ -548,11 +549,12 @@ class TransactionManager {
     settlementData.setApplicationId(applicationId);
     settlementData.setUserId(_userId);
     settlementData.setAmount(_amount);
-    settlementData.setToAddress(toAddress)
+    settlementData.setToAddress(toAddress);
     settlementData.setFromAddress(fromAddress);
     settlementData.setTxHash(normalizedTxHash);
     settlementData.setBlockId(_blockId);
     settlementData.setTimestamp(normalizedTimestamp);
+    settlementData.setOnchainBalance(_toBalance);
     
     const authAddresses = [];
     authAddresses.push(walletBalanceAddress);
@@ -1115,7 +1117,7 @@ class TransactionManager {
     walletToUser.addUsers(applicationUser);
     const authAddresses = [];
     const walletLinkAddress = this.getWalletLinkAddress(address);
-    console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
+    // console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
     const walletBalanceAddress = this.getBalanceStateAddress('', address);
     const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
     const activityAddress = this.getActivityLogAddress(appUser.userId, appUser.applicationId);
@@ -1129,7 +1131,7 @@ class TransactionManager {
     } catch (error) {
       // do nothing
     }
-    console.log(`applicationUsers=${JSON.stringify(applicationUsers)}`);
+    // console.log(`applicationUsers=${JSON.stringify(applicationUsers)}`);
     if (applicationUsers.length > 0) {
       for (let i = 0; i < applicationUsers.length; i = i + 1) {
         if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
@@ -1138,8 +1140,7 @@ class TransactionManager {
         }
       }
     }
-    console.log(`authAddresses=${JSON.stringify(authAddresses)}`);
-    process.exit(1);
+    // console.log(`authAddresses=${JSON.stringify(authAddresses)}`);    
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.WalletToUser');

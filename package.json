@@ -1,6 +1,6 @@
 {
   "name": "propskit",
-  "version": "4.0.2",
+  "version": "4.0.6",
   "description": "Library containing classes to work with the sidechain",
   "main": "dist/index.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "test": "NODE_ENV=test mocha --timeout 60000 $NODE_DEBUG_OPTION $(find lib -name '*.test.ts') -r ts-node/register --exit || :",
     "pretest": "rm -f /tmp/out.log && cd scripts && sh ./local-sawtooth.sh && cd ../",
     "posttest": "kill $(ps aux | egrep '[g]o run cmd/main.go -c -f ./configs/development.json|[d]ocker-compose -f ./sawtooth-default.yaml up|[/]var.*configs/development' | awk '{print $2}') && cd scripts && sh ./destroy-local-sawtooth.sh && cd ../",
+    "qbuild": "npm run transpile",
     "build": "npm run transpile && npm run protos",
     "transpile": "tsc && npm run copyfiles",
     "copyfiles": "copyfiles lib/**/*.lua lib/**/*.js dist -u 1",

@@ -8,11 +8,11 @@ import WalletLinkPayload from './payloads/wallet_link_payload';
 import * as propsclient from './client';
 import * as utils from './common';
 
-class Props {
-  static Subscriber = propsclient.Subscriber;
-  static Config = propsclient.Config;
-  static Signer = utils.Secp256k1Signer;
-  static AddressBuilder = utils.AddressBuilder;
+namespace Props {
+  export class Subscriber extends propsclient.Subscriber {};
+  export class Config extends propsclient.Config {};
+  export class Signer extends utils.Secp256k1Signer {};
+  export const AddressBuilder = utils.AddressBuilder;
 }
 
 export {
