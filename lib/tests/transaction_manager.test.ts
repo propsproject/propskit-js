@@ -22,8 +22,9 @@ describe('Transaction Manager tests', async () => {
   const options = {
     familyName: 'pending-earnings',
     familyVersion: '1.0',
-    host: '127.0.0.1',
-    port: 8008,
+    host: 'api.propschain.propsproject.io', // '127.0.0.1',
+    port: 443,
+    https: true,
   };
 
   const privateKey: string = '196749ed808372060eaeffe10e56de82a48829fcf52199847e1e1db4b780ced0'; // '442bc950759a2f3e8ecc56e6523b00ae3cf658341f64f894a457543c98f9e313';
@@ -56,6 +57,13 @@ describe('Transaction Manager tests', async () => {
     const amount: number = 25;
     const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';
     const tm: TransactionManager = new TransactionManager(options);
+    
+    await tm.submitLinkWalletTransaction(pk, {
+      userId: '6c743be532b64f1b0988ea900de30313',
+      applicationId: '0x027cb938611e48772af147d3cc89542d6c197fe9',
+      address: '0x14639a2403467a8af99fdb2e8b142f4d1a8fa4e0',
+      signature: '0xab9dbdf277cab66c6eadcad6d23e8ec31b4b4154017bfe3b748c0319e84c30d45f9f92b8a8d461491325f57ef4f11f552358c391d5787c1242bbf44438b047781c',
+    });
     // const transactionPayload: TransactionPayload = { transactionType: Method.ISSUE, userId, applicationId, amount, description: 'Broadcasting' };
     const address: string = tm.getTransactionStateAddress(Method.ISSUE, applicationId, userId, ts);
     expect(address).to.be.equal(expectedAddress);

@@ -374,16 +374,16 @@ class TransactionManager {
       uri: this.stateAddressUrl(walletLinkAddress),
       headers: { 'Content-Type': 'application/json' },
     };
-
+    // console.log(`getLinkedWalletApplicationUsers uri=${options.uri}`);
     try {
       const res = JSON.parse(await rp(options));
       const data = res.data;
       const applicationUsers: ApplicationUser[] = [];
-
+      // console.log(`res=${JSON.stringify(res)}`);
       data.forEach((entry) => {
         const bytes = new Uint8Array(Buffer.from(entry.data, 'base64'));
         const walletToUser: WalletToUser = new users_pb.WalletToUser.deserializeBinary(bytes);
-        console.log(`walletToUser=${JSON.stringify(walletToUser.toObject())}`);
+        // console.log(`walletToUser=${JSON.stringify(walletToUser.toObject())}`);
         const walletToUserList =  walletToUser.getUsersList();
         for (let i = 0; i < walletToUserList.length; i = i + 1) {
           const appUser: ApplicationUser = {
@@ -1017,8 +1017,12 @@ class TransactionManager {
     const prefix: string = this.prefixes['balance'];
     const part1: string = createHash('sha512').update(`${applicationId}`).digest('hex').toLowerCase().substring(0,10);
     const part2: string = createHash('sha512').update(`${userId}`).digest('hex').toLowerCase().substring(0,54);
-
     return `${prefix}${part1}${part2}`;
+  }
+
+  public getBalanceAddressPrefix(): string {
+    const prefix: string = this.prefixes['balance'];    
+    return `${prefix}`;
   }
 
   public getBalanceUpdateAddress(txHash: string, address: string): string {
@@ -1035,6 +1039,11 @@ class TransactionManager {
     const prefix: string = this.prefixes['walletLink'];
     const body: string = createHash('sha512').update(`${normalizedAddress}`).digest('hex').toLowerCase().substring(0,64);
     return `${prefix}${body}`;
+  }
+
+  public getWalletLinkAddressPrefix(): string {
+    const prefix: string = this.prefixes['walletLink'];
+    return `${prefix}`;
   }
 
   public getLastEthBlockStateAddress(): string {
@@ -1116,31 +1125,35 @@ class TransactionManager {
     applicationUser.setTimestamp(timestamp);
     walletToUser.addUsers(applicationUser);
     const authAddresses = [];
-    const walletLinkAddress = this.getWalletLinkAddress(address);
-    // console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
-    const walletBalanceAddress = this.getBalanceStateAddress('', address);
-    const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
+    authAddresses.push(this.getWalletLinkAddressPrefix());
+    authAddresses.push(this.getBalanceAddressPrefix());
+    // const walletLinkAddress = this.getWalletLinkAddress(address);
+    // // console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
+    // const walletBalanceAddress = this.getBalanceStateAddress('', address);
+    // const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
     const activityAddress = this.getActivityLogAddress(appUser.userId, appUser.applicationId);
-    authAddresses.push(walletLinkAddress);
-    authAddresses.push(walletBalanceAddress);
-    authAddresses.push(userBalanceAddress);
+    // authAddresses.push(walletLinkAddress);
+    // authAddresses.push(walletBalanceAddress);
+    // authAddresses.push(userBalanceAddress);
     authAddresses.push(activityAddress);
-    let applicationUsers:ApplicationUser[] = [];
-    try {
-      applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
-    } catch (error) {
-      // do nothing
-    }
-    // console.log(`applicationUsers=${JSON.stringify(applicationUsers)}`);
-    if (applicationUsers.length > 0) {
-      for (let i = 0; i < applicationUsers.length; i = i + 1) {
-        if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
-          authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
-          authAddresses.push(this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId));
-        }
-      }
-    }
-    // console.log(`authAddresses=${JSON.stringify(authAddresses)}`);    
+    // console.log(`authAddresses=${JSON.stringify(authAddresses)}`);
+    // let applicationUsers:ApplicationUser[] = [];
+    // try {
+    //   applicationUsers = await this.getLinkedWalletApplicationUsers(walletLinkAddress);
+    // } catch (error) {
+    //   // do nothing
+    // }
+    // // console.log(`applicationUsers=${JSON.stringify(applicationUsers)}`);
+    // if (applicationUsers.length > 0) {
+    //   for (let i = 0; i < applicationUsers.length; i = i + 1) {
+    //     if (applicationUsers[i].applicationId !== appUser.applicationId || applicationUsers[i].userId !== appUser.userId) {
+    //       authAddresses.push(this.getBalanceStateAddress(applicationUsers[i].applicationId, applicationUsers[i].userId));
+    //       authAddresses.push(this.getActivityLogAddress(applicationUsers[i].userId, applicationUsers[i].applicationId));
+    //     }
+    //   }
+    // }
+    // console.log(`authAddresses=${JSON.stringify(authAddresses)}`);
+    // process.exit(0);
     const params = new any.Any();
     params.setValue(walletToUser.serializeBinary());
     params.setTypeUrl('github.com/propsproject/pending-props/protos/pending_props_pb.WalletToUser');
