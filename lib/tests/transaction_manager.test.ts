@@ -22,9 +22,10 @@ describe('Transaction Manager tests', async () => {
   const options = {
     familyName: 'pending-earnings',
     familyVersion: '1.0',
-    host: 'api.propschain.propsproject.io', // '127.0.0.1',
-    port: 443,
-    https: true,
+    host: '127.0.0.1',
+    // host: 'api.propschain.propsproject.io', // '127.0.0.1',
+    // port: 443,
+    https: false,
   };
 
   const privateKey: string = '196749ed808372060eaeffe10e56de82a48829fcf52199847e1e1db4b780ced0'; // '442bc950759a2f3e8ecc56e6523b00ae3cf658341f64f894a457543c98f9e313';
@@ -48,26 +49,26 @@ describe('Transaction Manager tests', async () => {
   //   console.log(`res=${res}`);
   // });
 
-  it('Succesfully calculate a pending state address', async() => {
-    const pk: string = 'fd899d64b5209b53e6b6380dbe195500d988b2184d3a7076681370d5d1c58408';
-    const ts: number = 1559486262;
-    // const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
-    const userId: string = 'user1';
-    const applicationId: string = 'app1';
-    const amount: number = 25;
-    const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';
-    const tm: TransactionManager = new TransactionManager(options);
+  // it('Succesfully calculate a pending state address', async() => {
+  //   const pk: string = 'fd899d64b5209b53e6b6380dbe195500d988b2184d3a7076681370d5d1c58408';
+  //   const ts: number = 1559486262;
+  //   // const wallet: string = '0x1874ce7662ff1f64fd1375861aa9c5661790fd25';
+  //   const userId: string = 'user1';
+  //   const applicationId: string = 'app1';
+  //   const amount: number = 25;
+  //   const expectedAddress: string = 'bd88c631458f3b51129ec62c20118ff506dac139ec30a521d12b9883e55de4ad3682c1';
+  //   const tm: TransactionManager = new TransactionManager(options);
     
-    await tm.submitLinkWalletTransaction(pk, {
-      userId: '6c743be532b64f1b0988ea900de30313',
-      applicationId: '0x027cb938611e48772af147d3cc89542d6c197fe9',
-      address: '0x14639a2403467a8af99fdb2e8b142f4d1a8fa4e0',
-      signature: '0xab9dbdf277cab66c6eadcad6d23e8ec31b4b4154017bfe3b748c0319e84c30d45f9f92b8a8d461491325f57ef4f11f552358c391d5787c1242bbf44438b047781c',
-    });
-    // const transactionPayload: TransactionPayload = { transactionType: Method.ISSUE, userId, applicationId, amount, description: 'Broadcasting' };
-    const address: string = tm.getTransactionStateAddress(Method.ISSUE, applicationId, userId, ts);
-    expect(address).to.be.equal(expectedAddress);
-  });
+  //   await tm.submitLinkWalletTransaction(pk, {
+  //     userId: '6c743be532b64f1b0988ea900de30313',
+  //     applicationId: '0x027cb938611e48772af147d3cc89542d6c197fe9',
+  //     address: '0x14639a2403467a8af99fdb2e8b142f4d1a8fa4e0',
+  //     signature: '0xab9dbdf277cab66c6eadcad6d23e8ec31b4b4154017bfe3b748c0319e84c30d45f9f92b8a8d461491325f57ef4f11f552358c391d5787c1242bbf44438b047781c',
+  //   });
+  //   // const transactionPayload: TransactionPayload = { transactionType: Method.ISSUE, userId, applicationId, amount, description: 'Broadcasting' };
+  //   const address: string = tm.getTransactionStateAddress(Method.ISSUE, applicationId, userId, ts);
+  //   expect(address).to.be.equal(expectedAddress);
+  // });
 
   it('Succesfully calculate a balance address', async() => {
     const userId: string = 'user1';

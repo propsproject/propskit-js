@@ -16,6 +16,7 @@ const BigNumber = require('bignumber.js');
 BigNumber.set({ EXPONENTIAL_AT: 1e+9 });
 const Web3 = require('web3');
 const web3 = new Web3();
+import uuid from 'uuid/v4';
 
 import TransactionPayload from './payloads/transaction_payload';
 import ActivityPayload from './payloads/activity_payload';
@@ -1164,6 +1165,7 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: authAddresses,
         outputs: authAddresses,
+        nonce: uuid(),
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
@@ -1197,6 +1199,7 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: [stateAddress],
         outputs: [stateAddress],
+        nonce: uuid(),
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
@@ -1244,6 +1247,7 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: stateAddresses,
         outputs: stateAddresses,
+        nonce: uuid(),
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
@@ -1272,6 +1276,7 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: [...authAddresses],
         outputs: [...authAddresses],
+        nonce: uuid(),
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
@@ -1306,6 +1311,7 @@ class TransactionManager {
         familyVersion: this.familyVersion,
         inputs: [...authAddresses],
         outputs: [...authAddresses],
+        nonce: uuid(),
         signerPublicKey: TransactionManager.getPublicKey(privateKey),
         batcherPublicKey: TransactionManager.getPublicKey(privateKey),
         dependencies: [],
@@ -1363,6 +1369,7 @@ class TransactionManager {
       familyVersion: this.familyVersion,
       inputs: stateAddresses,
       outputs: stateAddresses,
+      nonce: uuid(),
       signerPublicKey: TransactionManager.getPublicKey(privateKey),
       batcherPublicKey: TransactionManager.getPublicKey(privateKey),
       dependencies: [],
