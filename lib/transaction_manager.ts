@@ -1070,6 +1070,10 @@ class TransactionManager {
     return `${prefix}${part1}${part2}`;
   }
   
+  public getActivityLogAddressPrefix(): string {
+    const prefix: string = this.prefixes['activityLog'];        
+    return `${prefix}`;
+  }
   public getActivityLogAddress(userId: string, appId: string): string {
     const prefix: string = this.prefixes['activityLog'];    
     // const part1 = createHash('sha512')
@@ -1128,15 +1132,16 @@ class TransactionManager {
     const authAddresses = [];
     authAddresses.push(this.getWalletLinkAddressPrefix());
     authAddresses.push(this.getBalanceAddressPrefix());
+    authAddresses.push(this.getActivityLogAddressPrefix());
     // const walletLinkAddress = this.getWalletLinkAddress(address);
     // // console.log(`walletLinkAddress=${walletLinkAddress}, address=${address}`);
     // const walletBalanceAddress = this.getBalanceStateAddress('', address);
     // const userBalanceAddress = this.getBalanceStateAddress(appUser.applicationId, appUser.userId);
-    const activityAddress = this.getActivityLogAddress(appUser.userId, appUser.applicationId);
+    // const activityAddress = this.getActivityLogAddress(appUser.userId, appUser.applicationId);
     // authAddresses.push(walletLinkAddress);
     // authAddresses.push(walletBalanceAddress);
     // authAddresses.push(userBalanceAddress);
-    authAddresses.push(activityAddress);
+    // authAddresses.push(activityAddress);
     // console.log(`authAddresses=${JSON.stringify(authAddresses)}`);
     // let applicationUsers:ApplicationUser[] = [];
     // try {
