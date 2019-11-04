@@ -161,22 +161,24 @@ export class Subscriber {
     return this;
   }
 
-  public subscribeBlocks(callback : any) : Subscriber {
+  public subscribeBlocks(callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
     const subscription: EventSubscription = new EventSubscription();
     subscription.setEventType(EventTypes.blockCommit);
     this.deltas[subscription.getEventType()] = callback;
+    console.log(`***** subscribeBlocks **** ${JSON.stringify(lastKnownBlockIDs)}`);
     return this
       .addSubscription(subscription)
-      .sendSubscribeRequest();
+      .sendSubscribeRequest(lastKnownBlockIDs);
   }
 
-  public subscribeDeltas(callback : any) : Subscriber {
+  public subscribeDeltas(callback : any, lastKnownBlockIDs?: string[]) : Subscriber {
     const subscription: EventSubscription = new EventSubscription();
     subscription.setEventType(EventTypes.stateDelta);
     this.deltas[subscription.getEventType()] = callback;
+    console.log(`***** subscribeDeltas **** ${JSON.stringify(lastKnownBlockIDs)}`);
     return this
       .addSubscription(subscription)
-      .sendSubscribeRequest();
+      .sendSubscribeRequest(lastKnownBlockIDs);
   }
 
   get currentSubscriptions() : ReadonlyArray<EventSubscription> {
