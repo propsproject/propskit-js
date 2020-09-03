@@ -36,7 +36,7 @@
     "ethereum-address": "^0.0.4",
     "ethereumjs-util": "^6.0.0",
     "goog": "^0.2.1",
-    "google-closure-library": "^20180910.0.0",
+    "google-closure-library": "^20190301.0.0",
     "google-protobuf": "^3.6.1",
     "lodash": "^4.17.4",
     "md5": "^2.2.1",
