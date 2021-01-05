@@ -26,7 +26,7 @@
   "dependencies": {
     "apidoc": "^0.16.1",
     "async-wait-until": "^1.2.4",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "bignumber.js": "^7.2.1",
     "cbor": "^4.1.1",
     "chai": "^4.1.2",
