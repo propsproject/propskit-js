@@ -2150,9 +2150,9 @@ goog@^0.2.1:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/goog/-/goog-0.2.1.tgz#f175971aac69d5e080e7e09cb81a4f2c558805be"
 
-google-closure-library@^20180910.0.0:
-  version "20180910.0.0"
-  resolved "https://registry.yarnpkg.com/google-closure-library/-/google-closure-library-20180910.0.0.tgz#10f3c912a4974eedb01b853009b0847fd1ceef26"
+google-closure-library@^20200315.0.0:
+  version "20200315.0.0"
+  resolved "https://registry.yarnpkg.com/google-closure-library/-/google-closure-library-20200315.0.0.tgz#e20769b4e5be77da053c2d3bb21effef70146702"
 
 google-protobuf@^3.6.1:
   version "3.8.0"
